@@ -4,7 +4,7 @@ import java.io.PrintStream;
 
 public class Test {
     public static void main(String[] args) {
-        if (args.length < 1) {
+        if (args == null || args.length < 1) {
             System.err.println("You must supply a filename!");
             System.exit(1);
         }
@@ -14,8 +14,11 @@ public class Test {
 
         // "System.Collections.ArrayList"
         if (args.length >= 2) {
-            Type t = Type.GetType(args[1]);
-            dumpType(System.out, t);
+            Type t = Type.getType(args[1]);
+            if (t != null)
+              dumpType(System.out, t);
+            else
+              System.err.println("Type "+args[1]+" not found!");
         } else {
             dumpAssembly(assem);
         }

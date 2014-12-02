@@ -176,9 +176,9 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
       opcode == OpCode.Jmp) {
       OpCode.PUSH_size(opcode.CEE_push) - OpCode.POP_size(opcode.CEE_pop)
     } else if (opcode == OpCode.Calli || opcode == OpCode.Callvirt) {
-      (if (arg.ReturnType == VOID) 0 else 1) - arg.getParameters().length - 1
+      (if (arg.ReturnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length - 1
     } else {
-      (if (arg.ReturnType == VOID) 0 else 1) - arg.getParameters().length
+      (if (arg.ReturnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length
     }
     emit(opcode, arg, popush)
   }
@@ -226,7 +226,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // pop size is the number of parameters
     // push size is either 0 (void Method) either 1
     //System.out.println(arg.ReturnType.Size + " " + arg.GetParameters().length);
-    emit(opcode, arg, (if (arg.ReturnType == VOID) 0 else 1) -
+    emit(opcode, arg, (if (arg.ReturnType == Common.SystemVoid) 0 else 1) -
       arg.getParameters().length)
   }
 
@@ -242,8 +242,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     else
       emit(OpCode.Ldfld, arg)
     // then call System.Console.WriteLine(arg.Type)
-    val t: Type = Type.GetType("System.Console")
-    val m: MethodInfo = t.getMethod("WriteLine", Array(arg.fieldType))
+    val m: MethodInfo = Common.SystemConsole.getMethod("WriteLine", Array(arg.fieldType))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -255,8 +254,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // first load local variable
     emit(OpCode.Ldloc, arg)
     // then call System.Console.WriteLine(arg.Type)
-    val t: Type = Type.GetType("System.Console")
-    val m: MethodInfo = t.getMethod("WriteLine", Array(arg.LocalType))
+    val m: MethodInfo = Common.SystemConsole.getMethod("WriteLine", Array(arg.LocalType))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -268,8 +266,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // first load string
     emit(OpCode.Ldstr, arg)
     // then call System.Console.WriteLine(string)
-    val t: Type = Type.GetType("System.Console")
-    val m: MethodInfo = t.getMethod("WriteLine", Array(Type.GetType("System.String")))
+    val m: MethodInfo = Common.SystemConsole.getMethod("WriteLine", Array(Common.SystemString))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -376,7 +373,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
    */
   def throwException(exceptionType: Type): Unit = {
     assert(exceptionType != null)
-    if (!exceptionType.isSubtypeOf(Type.GetType("System.Exception")))
+    if (!exceptionType.isSubtypeOf(Common.SystemException))
       throw new RuntimeException
     (exceptionType + " doesn't extend System.Exception")
     val ctor: ConstructorInfo = exceptionType.getConstructor(Type.EmptyTypes)
@@ -501,8 +498,6 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
 } // class ILGenerator
 
 object ILGenerator {
-
-  val VOID: Type = Type.GetType("System.Void")
   val NO_LABEL: String = ""
 
   private final class ExceptionStack {

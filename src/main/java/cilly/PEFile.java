@@ -757,26 +757,26 @@ public class PEFile {
 	    Type type = null;
 	    int desc = readByte();
 	    switch (desc) {
-	    case ELEMENT_TYPE_BOOLEAN:type = Type.GetType("System.Boolean"); break;
-	    case ELEMENT_TYPE_CHAR:   type = Type.GetType("System.Char"); break;
-	    case ELEMENT_TYPE_I1:     type = Type.GetType("System.SByte"); break;
-	    case ELEMENT_TYPE_U1:     type = Type.GetType("System.Byte"); break;
-	    case ELEMENT_TYPE_I2:     type = Type.GetType("System.Int16"); break;
-	    case ELEMENT_TYPE_U2:     type = Type.GetType("System.UInt16"); break;
-	    case ELEMENT_TYPE_I4:     type = Type.GetType("System.Int32"); break;
-	    case ELEMENT_TYPE_U4:     type = Type.GetType("System.UInt32"); break;
-	    case ELEMENT_TYPE_I8:     type = Type.GetType("System.Int64"); break;
-	    case ELEMENT_TYPE_U8:     type = Type.GetType("System.UInt64"); break;
-	    case ELEMENT_TYPE_R4:     type = Type.GetType("System.Single"); break;
-	    case ELEMENT_TYPE_R8:     type = Type.GetType("System.Double"); break;
-	    case ELEMENT_TYPE_OBJECT: type = Type.GetType("System.Object"); break;
-	    case ELEMENT_TYPE_STRING: type = Type.GetType("System.String"); break;
-	    case ELEMENT_TYPE_I:      type = Type.GetType("System.IntPtr"); break;
-	    case ELEMENT_TYPE_U:      type = Type.GetType("System.UIntPtr"); break;
+	    case ELEMENT_TYPE_BOOLEAN:type = Type.getType("System.Boolean"); break;
+	    case ELEMENT_TYPE_CHAR:   type = Type.getType("System.Char"); break;
+	    case ELEMENT_TYPE_I1:     type = Type.getType("System.SByte"); break;
+	    case ELEMENT_TYPE_U1:     type = Type.getType("System.Byte"); break;
+	    case ELEMENT_TYPE_I2:     type = Type.getType("System.Int16"); break;
+	    case ELEMENT_TYPE_U2:     type = Type.getType("System.UInt16"); break;
+	    case ELEMENT_TYPE_I4:     type = Type.getType("System.Int32"); break;
+	    case ELEMENT_TYPE_U4:     type = Type.getType("System.UInt32"); break;
+	    case ELEMENT_TYPE_I8:     type = Type.getType("System.Int64"); break;
+	    case ELEMENT_TYPE_U8:     type = Type.getType("System.UInt64"); break;
+	    case ELEMENT_TYPE_R4:     type = Type.getType("System.Single"); break;
+	    case ELEMENT_TYPE_R8:     type = Type.getType("System.Double"); break;
+	    case ELEMENT_TYPE_OBJECT: type = Type.getType("System.Object"); break;
+	    case ELEMENT_TYPE_STRING: type = Type.getType("System.String"); break;
+	    case ELEMENT_TYPE_I:      type = Type.getType("System.IntPtr"); break;
+	    case ELEMENT_TYPE_U:      type = Type.getType("System.UIntPtr"); break;
 	    case ELEMENT_TYPE_PTR:        // Followed by <type> token.
 		if (getByte() == ELEMENT_TYPE_VOID) {
 		    readByte();
-		    type = Type.mkPtr(Type.GetType("System.Void"));
+		    type = Type.mkPtr(Type.getType("System.Void"));
 		} else type = Type.mkPtr(decodeType());
 		break;
         case ELEMENT_TYPE_BYREF:      /* although BYREF is not listed in 23.2.12. as possible alternative, this method is also called when parsing the signatures of a method param and a method return, which do allow for BYREF */
@@ -878,9 +878,9 @@ public class PEFile {
 	    switch (getByte()) {
 	    case ELEMENT_TYPE_VOID:
 		readByte();
-		return Type.GetType("System.Void");
+		return Type.getType("System.Void");
 	    case ELEMENT_TYPE_TYPEDBYREF:
-		return Type.GetType("System.TypedReference");
+		return Type.getType("System.TypedReference");
 	    case ELEMENT_TYPE_BYREF:
 		return decodeType();
 	    default:
@@ -894,7 +894,7 @@ public class PEFile {
 	    case ELEMENT_TYPE_BYREF:
 		    return decodeType();
 	    case ELEMENT_TYPE_TYPEDBYREF:
-		    return Type.GetType("System.TypedReference");
+		    return Type.getType("System.TypedReference");
 	    default:
 		    return decodeType();
 	    }

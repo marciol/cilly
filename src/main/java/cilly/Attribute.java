@@ -125,7 +125,7 @@ public class Attribute {
     }
 
     private static void map(String type, int id) {
-        Type t = Type.GetType("System." + type);
+        Type t = Type.getType("System." + type);
         assert type != null : type + " -> " + id;
         Integer i = new Integer(id);
         type2id.put(t, i);
@@ -350,7 +350,7 @@ public class Attribute {
             return arrT;
         case Signature.X_ELEMENT_TYPE_ENUM:
             String enumName = parseString();
-            Type enumT = Type.getType(enumName);
+            Type enumT = Type.getTypeInternal(enumName);
             return enumT;
         default:
             Type t = id2type.get(new Integer(id));
@@ -369,7 +369,7 @@ public class Attribute {
             return arrT;
         case Signature.X_ELEMENT_TYPE_ENUM:
             String enumName = parseString();
-            Type enumT = Type.getType(enumName);
+            Type enumT = Type.getTypeInternal(enumName);
             return enumT;
         default:
             Type t = id2type.get(new Integer(id));
@@ -390,7 +390,7 @@ public class Attribute {
             // return arrT;
         case Signature.X_ELEMENT_TYPE_ENUM:
             String enumName = parseString();
-            Type enumT = Type.getType(enumName); // TODO this "lookup" only
+            Type enumT = Type.getTypeInternal(enumName); // TODO this "lookup" only
                                                  // covers already-loaded
                                                  // assemblies.
             return enumT; // TODO null as return value (due to the above) spells
@@ -411,7 +411,7 @@ public class Attribute {
          * type will be found.
          */
         String name = (i < 0) ? typename : typename.substring(0, i);
-        Type t = Type.GetType(name);
+        Type t = Type.getType(name);
         if (t == null && i > 0) {
             int j = typename.indexOf(',', i + 1);
             if (j > 0) {
@@ -421,7 +421,7 @@ public class Attribute {
                 } catch (Throwable e) {
                     throw new RuntimeException(typename, e);
                 }
-                t = Type.GetType(name);
+                t = Type.getType(name);
             }
         }
         assert t != null : typename;

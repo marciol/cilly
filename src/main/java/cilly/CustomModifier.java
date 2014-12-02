@@ -39,7 +39,7 @@ public class CustomModifier {
     }
 
     public static Type VolatileMarker() {
-        return Type.GetType("System.Runtime.CompilerServices.IsVolatile");
+        return Type.getType("System.Runtime.CompilerServices.IsVolatile");
     }
 
 }

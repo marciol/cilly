@@ -346,7 +346,7 @@ abstract class ILPrinterVisitor extends Visitor {
   @throws(classOf[IOException])
   def caseConstructorBuilder(constr: ConstructorBuilder): Unit = {
     if (nomembers) return
-    print(".method "); printHeader(constr, VOID)
+    print(".method "); printHeader(constr, Common.SystemVoid)
     println(); println("{"); indent()
     printAttributes(constr)
     try {
@@ -643,7 +643,7 @@ abstract class ILPrinterVisitor extends Visitor {
     if (method.isInstanceOf[MethodInfo])
       returnType = (method.asInstanceOf[MethodInfo]).ReturnType
     else if (method.isInstanceOf[ConstructorInfo])
-      returnType = VOID
+      returnType = Common.SystemVoid
     else
       throw new RuntimeException()
 
@@ -753,7 +753,6 @@ abstract class ILPrinterVisitor extends Visitor {
 } // class ILPrinterVisitor
 
 object ILPrinterVisitor {
-  final val VOID: Type = Type.GetType("System.Void")
   protected final val TAB = 4
 
   protected final val SPACES = "                                "
@@ -829,7 +828,7 @@ object ILPrinterVisitor {
   final var primitive = scala.collection.mutable.Map.empty[Type, String]
   def addPrimitive(name: String, sig: String): Unit = {
     val tpe =
-      Type.GetType(name)
+      Type.getType(name)
     assert(tpe != null, "Cannot lookup primitive type " + tpe)
     primitive.put(tpe, sig)
   }

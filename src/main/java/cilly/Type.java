@@ -124,7 +124,7 @@ public abstract class Type extends MemberInfo {
 
     private static final Map<String, Type> types = new HashMap<String, Type>();
 
-    protected static Type getType(String name) {
+    protected static Type getTypeInternal(String name) {
         return types.get(name);
     }
 
@@ -413,7 +413,7 @@ public abstract class Type extends MemberInfo {
                 arrSig.append(',');
         }
         arrSig.append(']');
-        Type array = getType(elemType.fullName + arrSig);
+        Type array = getTypeInternal(elemType.fullName + arrSig);
         if (array != null)
             return array;
         array = new PrimitiveType(elemType.Module, elemType.Attributes
@@ -426,7 +426,7 @@ public abstract class Type extends MemberInfo {
     /***/
     public static Type mkPtr(Type elemType) {
         String name = elemType.fullName + "*";
-        Type type = getType(name);
+        Type type = getTypeInternal(name);
         if (type != null)
             return type;
         type = new PrimitiveType(elemType.Module, elemType.Attributes, name,
@@ -437,7 +437,7 @@ public abstract class Type extends MemberInfo {
     /***/
     public static Type mkByRef(Type elemType) {
         String name = elemType.fullName + "&";
-        Type type = getType(name);
+        Type type = getTypeInternal(name);
         if (type != null)
             return type;
         type = new PrimitiveType(elemType.Module, elemType.Attributes, name,
@@ -453,8 +453,8 @@ public abstract class Type extends MemberInfo {
      * fully qualified name for a class might look like this:
      * TopNamespace.SubNameSpace.ContainingClass+NestedClass,MyAssembly
      */
-    public static Type GetType(String fullName) {
-        Type type = getType(fullName);
+    public static Type getType(String fullName) {
+        Type type = getTypeInternal(fullName);
         if (type != null)
             return type;
 
@@ -465,7 +465,7 @@ public abstract class Type extends MemberInfo {
         if (i >= 0)
             if (j > i && j == (fullName.length() - 1)) {
                 String elementTypeName = fullName.substring(0, i);
-                Type elementType = GetType(elementTypeName);
+                Type elementType = getType(elementTypeName);
                 if (elementType == null)
                     throw new RuntimeException("Unknown element type '"
                             + elementTypeName + "' for the array type: "
@@ -482,7 +482,7 @@ public abstract class Type extends MemberInfo {
 
         // check if it's a pointer type
         if (fullName.charAt(fullName.length() - 1) == '*')
-            return addType(mkPtr(GetType(fullName.substring(0,
+            return addType(mkPtr(getType(fullName.substring(0,
                     fullName.length() - 1))));
 
         // check if it's a nested class
@@ -490,7 +490,7 @@ public abstract class Type extends MemberInfo {
         if (i > 0) {
             if (i == 0 || i == (fullName.length() - 1))
                 throw new RuntimeException("malformedTypeName");
-            Type enclosing = GetType(fullName.substring(0, i));
+            Type enclosing = getType(fullName.substring(0, i));
             return enclosing == null ? null : enclosing.getNestedType(fullName
                     .substring(i + 1));
         }
@@ -506,7 +506,7 @@ public abstract class Type extends MemberInfo {
             // System.out.println("\tin assemby " + assem + " -> " + type);
         }
 
-        Type type2 = getType(fullName);
+        Type type2 = getTypeInternal(fullName);
         if (type == type2)
             return type;
         return type == null ? null : addType(type);

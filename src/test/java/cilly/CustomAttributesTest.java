@@ -14,7 +14,7 @@ public class CustomAttributesTest {
     }
 
     public static void testCustomAttributes() {
-        Object[] attrs = Type.GetType("System.ObsoleteAttribute").getCustomAttributes(false);
+        Object[] attrs = Type.getType("System.ObsoleteAttribute").getCustomAttributes(false);
         assert attrs != null;
         for (int i = 0; i < attrs.length; i++) {
             System.out.println("\t" + attrs[i]);
