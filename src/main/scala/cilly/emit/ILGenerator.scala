@@ -16,7 +16,7 @@ import ILGenerator._
  * @author Nikolay Mihaylov
  * @version 1.0
  */
-final class ILGenerator(_owner: MethodBase) extends Visitable {
+final class ILGenerator(val owner: MethodBase) extends Visitable {
 
   //##########################################################################
   // public interface
@@ -238,14 +238,12 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
     // first load field info
     // if static use OpCode.Ldsfld
     if (arg.isStatic())
-      emit(OpCodes.Ldsfld, arg)
+      emit(OpCode.Ldsfld, arg)
     else
-      emit(OpCodes.Ldfld, arg)
+      emit(OpCode.Ldfld, arg)
     // then call System.Console.WriteLine(arg.Type)
     val t: Type = Type.GetType("System.Console")
-    val argsType: Array[Type] = new Array[Type](1)
-    argsType(0) = arg.fieldType
-    val m: MethodInfo = t.getMethod("WriteLine", argsType)
+    val m: MethodInfo = t.getMethod("WriteLine", Array(arg.fieldType))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -255,12 +253,10 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
    */
   def emitWriteLine(arg: LocalBuilder): Unit = {
     // first load local variable
-    emit(OpCodes.Ldloc, arg)
+    emit(OpCode.Ldloc, arg)
     // then call System.Console.WriteLine(arg.Type)
     val t: Type = Type.GetType("System.Console")
-    val argsType: Array[Type] = new Array[Type](1)
-    argsType(0) = arg.LocalType
-    val m: MethodInfo = t.getMethod("WriteLine", argsType)
+    val m: MethodInfo = t.getMethod("WriteLine", Array(arg.LocalType))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -273,9 +269,7 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
     emit(OpCode.Ldstr, arg)
     // then call System.Console.WriteLine(string)
     val t: Type = Type.GetType("System.Console")
-    val argsType: Array[Type] = new Array[Type](1)
-    argsType(0) = Type.GetType("System.String")
-    val m: MethodInfo = t.getMethod("WriteLine", argsType)
+    val m: MethodInfo = t.getMethod("WriteLine", Array(Type.GetType("System.String")))
     emitCall(OpCode.Call, m, null)
   }
 
@@ -344,7 +338,7 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
       throw new RuntimeException("Catch should follow either a try or catch")
     }
     val endExc: Label = excStack.popLabel()
-    emit(OpCodes.Leave, endExc)
+    emit(OpCode.Leave, endExc)
     // the CLI automatically provide the exception object on the evaluation stack
     // we adjust the stacksize
     lastLabel.incStacksize()
@@ -358,9 +352,9 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
     if (kind == Label.Kind.Try) {
       throw new RuntimeException("Try block with neither catch nor finally")
     } else if (kind == Label.Kind.Catch) {
-      emit(OpCodes.Leave, excStack.peekLabel())
+      emit(OpCode.Leave, excStack.peekLabel())
     } else if (kind == Label.Kind.Finally) {
-      emit(OpCodes.Endfinally)
+      emit(OpCode.Endfinally)
     }
     markLabel(excStack.popLabel())
     emitSpecialLabel(Label.EndTry)
@@ -372,7 +366,7 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
    */
   def beginFinallyBlock(): Unit = {
     val endExc: Label = excStack.popLabel()
-    emit(OpCodes.Leave, endExc)
+    emit(OpCode.Leave, endExc)
     excStack.push(Label.Finally, endExc)
     emitSpecialLabel(Label.Finally)
   }
@@ -389,8 +383,8 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
     if (ctor == null)
       throw new RuntimeException("Type " + exceptionType
         + "doesn't have a default constructor")
-    emit(OpCodes.Newobj, ctor)
-    emit(OpCodes.Throw)
+    emit(OpCode.Newobj, ctor)
+    emit(OpCode.Throw)
   }
 
   /**
@@ -447,9 +441,6 @@ final class ILGenerator(_owner: MethodBase) extends Visitable {
 
   // stack of label for exception mechanism
   private val excStack: ExceptionStack = new ExceptionStack()
-
-  // the method info owner of this ILGenerator
-  var owner: MethodBase = _owner
 
   val lineNums = scala.collection.mutable.Map.empty[Label, String]
 

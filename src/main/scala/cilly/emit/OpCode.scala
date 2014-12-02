@@ -8,54 +8,23 @@ import java.io.IOException
 
 /** Describes a Microsoft intermediate language (MSIL) instruction.
   *
+  * @param CEE_opcode The Operation Code of Microsoft intermediate language (MSIL) instruction.
+  * @param CEE_string The name of the Microsoft intermediate language (MSIL) instruction.
+  * @param CEE_code   The type of Microsoft intermediate language (MSIL) instruction.
+  * @param CEE_pop    How the Microsoft intermediate language (MSIL) instruction pops the stack.
+  * @param CEE_push   How the Microsoft intermediate language (MSIL) instruction pushes operand onto the stack.
+  * @param CEE_flow   Describes the type of flow control.
+  *
   * @author  Nikolay Mihaylov
   * @version 1.0
   */
-class OpCode extends Visitable {
+case class OpCode private (CEE_opcode: Int, CEE_string: String, CEE_code: Short, CEE_pop: Byte, CEE_push: Byte, CEE_inline: Byte, CEE_flow: Byte, CEE_length: Byte, CEE_popush: Byte) extends Visitable {
   import OpCode._
 
-  /** The Operation Code of Microsoft intermediate language (MSIL) instruction. */
-  var CEE_opcode: Int = _
-
-  /** The name of the Microsoft intermediate language (MSIL) instruction. */
-  var CEE_string: String = _
-
-  /** The type of Microsoft intermediate language (MSIL) instruction. */
-  var CEE_code: Short = _
-
-  /** How the Microsoft intermediate language (MSIL) instruction pops the stack. */
-  var CEE_pop: Byte = _
-
-  /** How the Microsoft intermediate language (MSIL) instruction pushes operand onto the stack. */
-  var CEE_push: Byte = _
-
-  /** Describes the type of flow control. */
-  var CEE_flow: Byte = _
-
-  /** ????? */
-  var CEE_inline: Byte = _
-
-  var CEE_length: Byte = _
-
-  var CEE_popush: Byte = _
-
-  /** the apply method for a visitor
-    */
+  /** the apply method for a visitor */
   @throws(classOf[IOException])
   def apply(v: Visitor): Unit = {
     v.caseOpCode(this)
-  }
-
-  protected def length(): Byte = {
-    val code = OpCode.length(CEE_code)
-    val inline = OpCode.INLINE_length(CEE_inline)
-    return if (inline < 0) { -1 } else { (code + inline).toByte }
-  }
-
-  protected def popush(): Byte = {
-    val pop = OpCode.POP_size(CEE_pop)
-    val push = OpCode.PUSH_size(CEE_push)
-    return if (pop < 0 || push < 0) { OpCode.POPUSH_SPECIAL } else { (push - pop).toByte }
   }
 
   override def toString(): String = {
@@ -517,1212 +486,991 @@ object OpCode {
 
   //########################################################################
   // Init methods for Opcode
-
-  def opcode(that: OpCode, opcode: Int, string: String, code: Int,
-    pop: Byte, push: Byte, inline: Byte, flow: Byte): Unit = {
-    that.CEE_opcode = opcode
-    that.CEE_string = string
-    that.CEE_code = code.toShort
-    that.CEE_pop = pop
-    that.CEE_push = push
-    that.CEE_inline = inline
-    that.CEE_flow = flow
-    that.CEE_length = that.length()
-    that.CEE_popush = that.popush()
+  def apply(opcode: Int, string: String, code: Int,
+    pop: Byte, push: Byte, inline: Byte, flow: Byte): OpCode = {
+    val len = length(code, inline)
+    val pp = popush(pop, push)
+    OpCode(opcode, string, code.toShort, pop, push, inline, flow, len, pp)
   }
 
-  def length(code: Int): Byte = {
+  private def lengthOfCode(code: Int): Byte = {
     if ((code & 0xFFFFFF00) == 0xFFFFFF00) return 1
     if ((code & 0xFFFFFF00) == 0xFFFFFE00) return 2
     return 0
+  }
+  private def length(CEE_code: Int, CEE_inline: Byte): Byte = {
+    val code = OpCode.lengthOfCode(CEE_code)
+    val inline = OpCode.INLINE_length(CEE_inline)
+    return if (inline < 0) { -1 } else { (code + inline).toByte }
+  }
+  private def popush(CEE_pop: Byte, CEE_push: Byte): Byte = {
+    val pop = OpCode.POP_size(CEE_pop)
+    val push = OpCode.PUSH_size(CEE_push)
+    return if (pop < 0 || push < 0) { OpCode.POPUSH_SPECIAL } else { (push - pop).toByte }
   }
 
   //########################################################################
   // case OpCode
 
-  /** Adds two values and pushes the result onto the evaluation stack.
-    */
-  final val Add = new OpCode()
-  opcode(Add, CEE_ADD, "add", 0xFFFFFF58, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Adds two values and pushes the result onto the evaluation stack. */
+  final val Add = OpCode(CEE_ADD, "add", 0xFFFFFF58, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Fills space if bytecodes are patched. No meaningful operation is performed
     * although a processing cycle can be consumed.
     */
-  final val Nop = new OpCode()
-  opcode(Nop, CEE_NOP, "nop", 0xFFFFFF00, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Nop = OpCode(CEE_NOP, "nop", 0xFFFFFF00, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Signals the Common Language Infrastructure (CLI) to inform the debugger that
     * a break point has been tripped.
     */
-  final val Break = new OpCode()
-  opcode(Break, CEE_BREAK, "break", 0xFFFFFF01, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_BREAK)
+  final val Break = OpCode(CEE_BREAK, "break", 0xFFFFFF01, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_BREAK)
 
-  /** Loads the argument at index 0 onto the evaluation stack.
-    */
-  final val Ldarg_0 = new OpCode()
-  opcode(Ldarg_0, CEE_LDARG_0, "ldarg.0", 0xFFFFFF02, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the argument at index 0 onto the evaluation stack. */
+  final val Ldarg_0 = OpCode(CEE_LDARG_0, "ldarg.0", 0xFFFFFF02, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the argument at index 1 onto the evaluation stack.
-    */
-  final val Ldarg_1 = new OpCode()
-  opcode(Ldarg_1, CEE_LDARG_1, "ldarg.1", 0xFFFFFF03, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the argument at index 1 onto the evaluation stack. */
+  final val Ldarg_1 = OpCode(CEE_LDARG_1, "ldarg.1", 0xFFFFFF03, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the argument at index 2 onto the evaluation stack.
-    */
-  final val Ldarg_2 = new OpCode()
-  opcode(Ldarg_2, CEE_LDARG_2, "ldarg.2", 0xFFFFFF04, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the argument at index 2 onto the evaluation stack. */
+  final val Ldarg_2 = OpCode(CEE_LDARG_2, "ldarg.2", 0xFFFFFF04, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the argument at index 3 onto the evaluation stack.
-    */
-  final val Ldarg_3 = new OpCode()
-  opcode(Ldarg_3, CEE_LDARG_3, "ldarg.3", 0xFFFFFF05, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the argument at index 3 onto the evaluation stack. */
+  final val Ldarg_3 = OpCode(CEE_LDARG_3, "ldarg.3", 0xFFFFFF05, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the local variable at index 0 onto the evaluation stack.
-    */
-  final val Ldloc_0 = new OpCode()
-  opcode(Ldloc_0, CEE_LDLOC_0, "ldloc.0", 0xFFFFFF06, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the local variable at index 0 onto the evaluation stack. */
+  final val Ldloc_0 = OpCode(CEE_LDLOC_0, "ldloc.0", 0xFFFFFF06, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the local variable at index 1 onto the evaluation stack.
-    */
-  final val Ldloc_1 = new OpCode()
-  opcode(Ldloc_1, CEE_LDLOC_1, "ldloc.1", 0xFFFFFF07, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the local variable at index 1 onto the evaluation stack. */
+  final val Ldloc_1 = OpCode(CEE_LDLOC_1, "ldloc.1", 0xFFFFFF07, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the local variable at index 2 onto the evaluation stack.
-    */
-  final val Ldloc_2 = new OpCode()
-  opcode(Ldloc_2, CEE_LDLOC_2, "ldloc.2", 0xFFFFFF08, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the local variable at index 2 onto the evaluation stack. */
+  final val Ldloc_2 = OpCode(CEE_LDLOC_2, "ldloc.2", 0xFFFFFF08, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
-  /** Loads the local variable at index 3 onto the evaluation stack.
-    */
-  final val Ldloc_3 = new OpCode()
-  opcode(Ldloc_3, CEE_LDLOC_3, "ldloc.3", 0xFFFFFF09, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  /** Loads the local variable at index 3 onto the evaluation stack. */
+  final val Ldloc_3 = OpCode(CEE_LDLOC_3, "ldloc.3", 0xFFFFFF09, POP_NONE, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and
     * stores it in a the local variable list at index 0.
     */
-  final val Stloc_0 = new OpCode()
-  opcode(Stloc_0, CEE_STLOC_0, "stloc.0", 0xFFFFFF0A, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stloc_0 = OpCode(CEE_STLOC_0, "stloc.0", 0xFFFFFF0A, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and
     * stores it in a the local variable list at index 1.
     */
-  final val Stloc_1 = new OpCode()
-  opcode(Stloc_1, CEE_STLOC_1, "stloc.1", 0xFFFFFF0B, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stloc_1 = OpCode(CEE_STLOC_1, "stloc.1", 0xFFFFFF0B, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and
     * stores it in a the local variable list at index 2.
     */
-  final val Stloc_2 = new OpCode()
-  opcode(Stloc_2, CEE_STLOC_2, "stloc.2", 0xFFFFFF0C, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stloc_2 = OpCode(CEE_STLOC_2, "stloc.2", 0xFFFFFF0C, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and
     * stores it in a the local variable list at index 3.
     */
-  final val Stloc_3 = new OpCode()
-  opcode(Stloc_3, CEE_STLOC_3, "stloc.3", 0xFFFFFF0D, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stloc_3 = OpCode(CEE_STLOC_3, "stloc.3", 0xFFFFFF0D, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the argument (referenced by a specified short form index)
     * onto the evaluation stack.
     */
-  final val Ldarg_S = new OpCode()
-  opcode(Ldarg_S, CEE_LDARG_S, "ldarg.s", 0xFFFFFF0E, POP_NONE, PUSH_1, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Ldarg_S = OpCode(CEE_LDARG_S, "ldarg.s", 0xFFFFFF0E, POP_NONE, PUSH_1, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Load an argument address, in short form, onto the evaluation stack.
     */
-  final val Ldarga_S = new OpCode()
-  opcode(Ldarga_S, CEE_LDARGA_S, "ldarga.s", 0xFFFFFF0F, POP_NONE, PUSH_I, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Ldarga_S = OpCode(CEE_LDARGA_S, "ldarga.s", 0xFFFFFF0F, POP_NONE, PUSH_I, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Loads the local variable at a specific index onto the evaluation stack,
     * short form.
     */
-  final val Ldloc_S = new OpCode()
-  opcode(Ldloc_S, CEE_LDLOC_S, "ldloc.s", 0xFFFFFF11, POP_NONE, PUSH_1, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Ldloc_S = OpCode(CEE_LDLOC_S, "ldloc.s", 0xFFFFFF11, POP_NONE, PUSH_1, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Loads the address of the local variable at a specific index onto
     * the evaluation stack, short form.
     */
-  final val Ldloca_S = new OpCode()
-  opcode(Ldloca_S, CEE_LDLOCA_S, "ldloca.s", 0xFFFFFF12, POP_NONE, PUSH_I, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Ldloca_S = OpCode(CEE_LDLOCA_S, "ldloca.s", 0xFFFFFF12, POP_NONE, PUSH_I, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Stores the value on top of the evaluation stack in the argument slot
     * at a specified index, short form.
     */
-  final val Starg_S = new OpCode()
-  opcode(Starg_S, CEE_STARG_S, "starg.s", 0xFFFFFF10, POP_1, PUSH_NONE, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Starg_S = OpCode(CEE_STARG_S, "starg.s", 0xFFFFFF10, POP_1, PUSH_NONE, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and stores it
     * in a the local variable list at index (short form).
     */
-  final val Stloc_S = new OpCode()
-  opcode(Stloc_S, CEE_STLOC_S, "stloc.s", 0xFFFFFF13, POP_1, PUSH_NONE, INLINE_VARIABLE_S, FLOW_NEXT)
+  final val Stloc_S = OpCode(CEE_STLOC_S, "stloc.s", 0xFFFFFF13, POP_1, PUSH_NONE, INLINE_VARIABLE_S, FLOW_NEXT)
 
   /** Pushes a null reference (type O) onto the evaluation stack.
     */
-  final val Ldnull = new OpCode()
-  opcode(Ldnull, CEE_LDNULL, "ldnull", 0xFFFFFF14, POP_NONE, PUSH_REF, INLINE_NONE, FLOW_NEXT)
+  final val Ldnull = OpCode(CEE_LDNULL, "ldnull", 0xFFFFFF14, POP_NONE, PUSH_REF, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of -1 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_M1 = new OpCode()
-  opcode(Ldc_I4_M1, CEE_LDC_I4_M1, "ldc.i4.m1", 0xFFFFFF15, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_M1 = OpCode(CEE_LDC_I4_M1, "ldc.i4.m1", 0xFFFFFF15, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 0 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_0 = new OpCode()
-  opcode(Ldc_I4_0, CEE_LDC_I4_0, "ldc.i4.0", 0xFFFFFF16, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_0 = OpCode(CEE_LDC_I4_0, "ldc.i4.0", 0xFFFFFF16, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 1 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_1 = new OpCode()
-  opcode(Ldc_I4_1, CEE_LDC_I4_1, "ldc.i4.1", 0xFFFFFF17, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_1 = OpCode(CEE_LDC_I4_1, "ldc.i4.1", 0xFFFFFF17, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 2 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_2 = new OpCode()
-  opcode(Ldc_I4_2, CEE_LDC_I4_2, "ldc.i4.2", 0xFFFFFF18, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_2 = OpCode(CEE_LDC_I4_2, "ldc.i4.2", 0xFFFFFF18, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 3 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_3 = new OpCode()
-  opcode(Ldc_I4_3, CEE_LDC_I4_3, "ldc.i4.3", 0xFFFFFF19, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_3 = OpCode(CEE_LDC_I4_3, "ldc.i4.3", 0xFFFFFF19, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 4 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_4 = new OpCode()
-  opcode(Ldc_I4_4, CEE_LDC_I4_4, "ldc.i4.4", 0xFFFFFF1A, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_4 = OpCode(CEE_LDC_I4_4, "ldc.i4.4", 0xFFFFFF1A, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 5 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_5 = new OpCode()
-  opcode(Ldc_I4_5, CEE_LDC_I4_5, "ldc.i4.5", 0xFFFFFF1B, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_5 = OpCode(CEE_LDC_I4_5, "ldc.i4.5", 0xFFFFFF1B, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 6 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_6 = new OpCode()
-  opcode(Ldc_I4_6, CEE_LDC_I4_6, "ldc.i4.6", 0xFFFFFF1C, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_6 = OpCode(CEE_LDC_I4_6, "ldc.i4.6", 0xFFFFFF1C, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 7 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_7 = new OpCode()
-  opcode(Ldc_I4_7, CEE_LDC_I4_7, "ldc.i4.7", 0xFFFFFF1D, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_7 = OpCode(CEE_LDC_I4_7, "ldc.i4.7", 0xFFFFFF1D, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the integer value of 8 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4_8 = new OpCode()
-  opcode(Ldc_I4_8, CEE_LDC_I4_8, "ldc.i4.8", 0xFFFFFF1E, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldc_I4_8 = OpCode(CEE_LDC_I4_8, "ldc.i4.8", 0xFFFFFF1E, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes the supplied int8 value onto the evaluation stack as an int32, short form.
     */
-  final val Ldc_I4_S = new OpCode()
-  opcode(Ldc_I4_S, CEE_LDC_I4_S, "ldc.i4.s", 0xFFFFFF1F, POP_NONE, PUSH_I, INLINE_I_S, FLOW_NEXT)
+  final val Ldc_I4_S = OpCode(CEE_LDC_I4_S, "ldc.i4.s", 0xFFFFFF1F, POP_NONE, PUSH_I, INLINE_I_S, FLOW_NEXT)
 
   /** Pushes a supplied value of type int32 onto the evaluation stack as an int32.
     */
-  final val Ldc_I4 = new OpCode()
-  opcode(Ldc_I4, CEE_LDC_I4, "ldc.i4", 0xFFFFFF20, POP_NONE, PUSH_I, INLINE_I, FLOW_NEXT)
+  final val Ldc_I4 = OpCode(CEE_LDC_I4, "ldc.i4", 0xFFFFFF20, POP_NONE, PUSH_I, INLINE_I, FLOW_NEXT)
 
   /** Pushes a supplied value of type int64 onto the evaluation stack as an int64.
     */
-  final val Ldc_I8 = new OpCode()
-  opcode(Ldc_I8, CEE_LDC_I8, "ldc.i8", 0xFFFFFF21, POP_NONE, PUSH_I8, INLINE_I8, FLOW_NEXT)
+  final val Ldc_I8 = OpCode(CEE_LDC_I8, "ldc.i8", 0xFFFFFF21, POP_NONE, PUSH_I8, INLINE_I8, FLOW_NEXT)
 
   /** Pushes a supplied value of type float32 onto the evaluation stack as type F (float).
     */
-  final val Ldc_R4 = new OpCode()
-  opcode(Ldc_R4, CEE_LDC_R4, "ldc.r4", 0xFFFFFF22, POP_NONE, PUSH_R4, INLINE_R, FLOW_NEXT)
+  final val Ldc_R4 = OpCode(CEE_LDC_R4, "ldc.r4", 0xFFFFFF22, POP_NONE, PUSH_R4, INLINE_R, FLOW_NEXT)
 
   /** Pushes a supplied value of type float64 onto the evaluation stack as type F (float).
     */
-  final val Ldc_R8 = new OpCode()
-  opcode(Ldc_R8, CEE_LDC_R8, "ldc.r8", 0xFFFFFF23, POP_NONE, PUSH_R8, INLINE_R8, FLOW_NEXT)
+  final val Ldc_R8 = OpCode(CEE_LDC_R8, "ldc.r8", 0xFFFFFF23, POP_NONE, PUSH_R8, INLINE_R8, FLOW_NEXT)
 
   /** Copies the current topmost value on the evaluation stack, and then pushes the copy
     * onto the evaluation stack.
     */
-  final val Dup = new OpCode()
-  opcode(Dup, CEE_DUP, "dup", 0xFFFFFF25, POP_1, PUSH_1_1, INLINE_NONE, FLOW_NEXT)
+  final val Dup = OpCode(CEE_DUP, "dup", 0xFFFFFF25, POP_1, PUSH_1_1, INLINE_NONE, FLOW_NEXT)
 
   /** Removes the value currently on top of the evaluation stack.
     */
-  final val Pop = new OpCode()
-  opcode(Pop, CEE_POP, "pop", 0xFFFFFF26, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Pop = OpCode(CEE_POP, "pop", 0xFFFFFF26, POP_1, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Exits current method and jumps to specified method.
     */
-  final val Jmp = new OpCode()
-  opcode(Jmp, CEE_JMP, "jmp", 0xFFFFFF27, POP_NONE, PUSH_NONE, INLINE_METHOD, FLOW_CALL)
+  final val Jmp = OpCode(CEE_JMP, "jmp", 0xFFFFFF27, POP_NONE, PUSH_NONE, INLINE_METHOD, FLOW_CALL)
 
   /** Calls the method indicated by the passed method descriptor.
     */
-  final val Call = new OpCode()
-  opcode(Call, CEE_CALL, "call", 0xFFFFFF28, POP_SPECIAL, PUSH_SPECIAL, INLINE_METHOD, FLOW_CALL)
+  final val Call = OpCode(CEE_CALL, "call", 0xFFFFFF28, POP_SPECIAL, PUSH_SPECIAL, INLINE_METHOD, FLOW_CALL)
 
   /** constrained prefix
     */
-  final val Constrained = new OpCode()
-  opcode(Constrained, CEE_CONSTRAINED, "constrained.", 0xFFFFFE16, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Constrained = OpCode(CEE_CONSTRAINED, "constrained.", 0xFFFFFE16, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** readonly prefix
     */
-  final val Readonly = new OpCode()
-  opcode(Readonly, CEE_READONLY, "readonly.", 0xFFFFFE1E, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Readonly = OpCode(CEE_READONLY, "readonly.", 0xFFFFFE1E, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Calls the method indicated on the evaluation stack (as a pointer to an entry point)
     * with arguments described by a calling convention.
     */
-  final val Calli = new OpCode()
-  opcode(Calli, CEE_CALLI, "calli", 0xFFFFFF29, POP_SPECIAL, PUSH_SPECIAL, INLINE_SIGNATURE, FLOW_CALL)
+  final val Calli = OpCode(CEE_CALLI, "calli", 0xFFFFFF29, POP_SPECIAL, PUSH_SPECIAL, INLINE_SIGNATURE, FLOW_CALL)
 
   /** Returns from the current method, pushing a return value (if present) from the caller's
     * evaluation stack onto the callee's evaluation stack.
     */
-  final val Ret = new OpCode()
-  opcode(Ret, CEE_RET, "ret", 0xFFFFFF2A, POP_SPECIAL, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
+  final val Ret = OpCode(CEE_RET, "ret", 0xFFFFFF2A, POP_SPECIAL, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
 
   /** Unconditionally transfers control to a target instruction (short form).
     */
-  final val Br_S = new OpCode()
-  opcode(Br_S, CEE_BR_S, "br.s", 0xFFFFFF2B, POP_NONE, PUSH_NONE, INLINE_TARGET_S, FLOW_BRANCH)
+  final val Br_S = OpCode(CEE_BR_S, "br.s", 0xFFFFFF2B, POP_NONE, PUSH_NONE, INLINE_TARGET_S, FLOW_BRANCH)
 
   /** Transfers control to a target instruction if value is false, a null reference, or zero.
     */
-  final val Brfalse_S = new OpCode()
-  opcode(Brfalse_S, CEE_BRFALSE_S, "brfalse.s", 0xFFFFFF2C, POP_I, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Brfalse_S = OpCode(CEE_BRFALSE_S, "brfalse.s", 0xFFFFFF2C, POP_I, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if value is true, not null, or non-zero.
     */
-  final val Brtrue_S = new OpCode()
-  opcode(Brtrue_S, CEE_BRTRUE_S, "brtrue.s", 0xFFFFFF2D, POP_I, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Brtrue_S = OpCode(CEE_BRTRUE_S, "brtrue.s", 0xFFFFFF2D, POP_I, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if two values are equal.
     */
-  final val Beq_S = new OpCode()
-  opcode(Beq_S, CEE_BEQ_S, "beq.s", 0xFFFFFF2E, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Beq_S = OpCode(CEE_BEQ_S, "beq.s", 0xFFFFFF2E, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is greater than
     * or equal to the second value.
     */
-  final val Bge_S = new OpCode()
-  opcode(Bge_S, CEE_BGE_S, "bge.s", 0xFFFFFF2F, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Bge_S = OpCode(CEE_BGE_S, "bge.s", 0xFFFFFF2F, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is greater than
     * the second value.
     */
-  final val Bgt_S = new OpCode()
-  opcode(Bgt_S, CEE_BGT_S, "bgt.s", 0xFFFFFF30, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Bgt_S = OpCode(CEE_BGT_S, "bgt.s", 0xFFFFFF30, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is less than
     * or equal to the second value.
     */
-  final val Ble_S = new OpCode()
-  opcode(Ble_S, CEE_BLE_S, "ble.s", 0xFFFFFF31, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Ble_S = OpCode(CEE_BLE_S, "ble.s", 0xFFFFFF31, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is less than
     * the second value.
     */
-  final val Blt_S = new OpCode()
-  opcode(Blt_S, CEE_BLT_S, "blt.s", 0xFFFFFF32, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Blt_S = OpCode(CEE_BLT_S, "blt.s", 0xFFFFFF32, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) when two unsigned integer values
     * or unordered float values are not equal.
     */
-  final val Bne_Un_S = new OpCode()
-  opcode(Bne_Un_S, CEE_BNE_UN_S, "bne.un.s", 0xFFFFFF33, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Bne_Un_S = OpCode(CEE_BNE_UN_S, "bne.un.s", 0xFFFFFF33, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is greather
     * than the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Bge_Un_S = new OpCode()
-  opcode(Bge_Un_S, CEE_BGE_UN_S, "bge.un.s", 0xFFFFFF34, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Bge_Un_S = OpCode(CEE_BGE_UN_S, "bge.un.s", 0xFFFFFF34, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is greater than
     * the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Bgt_Un_S = new OpCode()
-  opcode(Bgt_Un_S, CEE_BGT_UN_S, "bgt.un.s", 0xFFFFFF35, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Bgt_Un_S = OpCode(CEE_BGT_UN_S, "bgt.un.s", 0xFFFFFF35, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is less than
     * or equal to the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Ble_Un_S = new OpCode()
-  opcode(Ble_Un_S, CEE_BLE_UN_S, "ble.un.s", 0xFFFFFF36, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Ble_Un_S = OpCode(CEE_BLE_UN_S, "ble.un.s", 0xFFFFFF36, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction (short form) if the first value is less than
     * the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Blt_Un_S = new OpCode()
-  opcode(Blt_Un_S, CEE_BLT_UN_S, "blt.un.s", 0xFFFFFF37, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
+  final val Blt_Un_S = OpCode(CEE_BLT_UN_S, "blt.un.s", 0xFFFFFF37, POP_1_1, PUSH_NONE, INLINE_TARGET_S, FLOW_COND_BRANCH)
 
   /** Unconditionally transfers control to a target instruction.
     */
-  final val Br = new OpCode()
-  opcode(Br, CEE_BR, "br", 0xFFFFFF38, POP_NONE, PUSH_NONE, INLINE_TARGET, FLOW_BRANCH)
+  final val Br = OpCode(CEE_BR, "br", 0xFFFFFF38, POP_NONE, PUSH_NONE, INLINE_TARGET, FLOW_BRANCH)
 
   /** Transfers control to a target instruction if value is false, a null reference
     * (Nothing in Visual Basic), or zero.
     */
-  final val Brfalse = new OpCode()
-  opcode(Brfalse, CEE_BRFALSE, "brfalse", 0xFFFFFF39, POP_I, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Brfalse = OpCode(CEE_BRFALSE, "brfalse", 0xFFFFFF39, POP_I, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if value is true, not null, or non-zero.
     */
-  final val Brtrue = new OpCode()
-  opcode(Brtrue, CEE_BRTRUE, "brtrue", 0xFFFFFF3A, POP_I, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Brtrue = OpCode(CEE_BRTRUE, "brtrue", 0xFFFFFF3A, POP_I, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if two values are equal.
     */
-  final val Beq = new OpCode()
-  opcode(Beq, CEE_BEQ, "beq", 0xFFFFFF3B, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Beq = OpCode(CEE_BEQ, "beq", 0xFFFFFF3B, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is greater than or
     * equal to the second value.
     */
-  final val Bge = new OpCode()
-  opcode(Bge, CEE_BGE, "bge", 0xFFFFFF3C, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Bge = OpCode(CEE_BGE, "bge", 0xFFFFFF3C, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is greater than the second value.
     */
-  final val Bgt = new OpCode()
-  opcode(Bgt, CEE_BGT, "bgt", 0xFFFFFF3D, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Bgt = OpCode(CEE_BGT, "bgt", 0xFFFFFF3D, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is less than or equal
     * to the second value.
     */
-  final val Ble = new OpCode()
-  opcode(Ble, CEE_BLE, "ble", 0xFFFFFF3E, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Ble = OpCode(CEE_BLE, "ble", 0xFFFFFF3E, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is less than the second value.
     */
-  final val Blt = new OpCode()
-  opcode(Blt, CEE_BLT, "blt", 0xFFFFFF3F, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Blt = OpCode(CEE_BLT, "blt", 0xFFFFFF3F, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction when two unsigned integer values or
     * unordered float values are not equal.
     */
-  final val Bne_Un = new OpCode()
-  opcode(Bne_Un, CEE_BNE_UN, "bne.un", 0xFFFFFF40, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Bne_Un = OpCode(CEE_BNE_UN, "bne.un", 0xFFFFFF40, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is greather than
     * the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Bge_Un = new OpCode()
-  opcode(Bge_Un, CEE_BGE_UN, "bge.un", 0xFFFFFF41, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Bge_Un = OpCode(CEE_BGE_UN, "bge.un", 0xFFFFFF41, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is greater than the
     * second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Bgt_Un = new OpCode()
-  opcode(Bgt_Un, CEE_BGT_UN, "bgt.un", 0xFFFFFF42, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Bgt_Un = OpCode(CEE_BGT_UN, "bgt.un", 0xFFFFFF42, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is less than or equal to
     * the second value, when comparing unsigned integer values or unordered float values.
     */
-  final val Ble_Un = new OpCode()
-  opcode(Ble_Un, CEE_BLE_UN, "ble.un", 0xFFFFFF43, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Ble_Un = OpCode(CEE_BLE_UN, "ble.un", 0xFFFFFF43, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Transfers control to a target instruction if the first value is less than the second value,
     * when comparing unsigned integer values or unordered float values.
     */
-  final val Blt_Un = new OpCode()
-  opcode(Blt_Un, CEE_BLT_UN, "blt.un", 0xFFFFFF44, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
+  final val Blt_Un = OpCode(CEE_BLT_UN, "blt.un", 0xFFFFFF44, POP_1_1, PUSH_NONE, INLINE_TARGET, FLOW_COND_BRANCH)
 
   /** Implements a jump table.
     */
-  final val Switch = new OpCode()
-  opcode(Switch, CEE_SWITCH, "switch", 0xFFFFFF45, POP_I, PUSH_NONE, INLINE_SWITCH, FLOW_COND_BRANCH)
+  final val Switch = OpCode(CEE_SWITCH, "switch", 0xFFFFFF45, POP_I, PUSH_NONE, INLINE_SWITCH, FLOW_COND_BRANCH)
 
   /** Loads a value of type int8 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_I1 = new OpCode()
-  opcode(Ldind_I1, CEE_LDIND_I1, "ldind.i1", 0xFFFFFF46, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_I1 = OpCode(CEE_LDIND_I1, "ldind.i1", 0xFFFFFF46, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type int16 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_I2 = new OpCode()
-  opcode(Ldind_I2, CEE_LDIND_I2, "ldind.i2", 0xFFFFFF48, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_I2 = OpCode(CEE_LDIND_I2, "ldind.i2", 0xFFFFFF48, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type int32 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_I4 = new OpCode()
-  opcode(Ldind_I4, CEE_LDIND_I4, "ldind.i4", 0xFFFFFF4A, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_I4 = OpCode(CEE_LDIND_I4, "ldind.i4", 0xFFFFFF4A, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type int64 as an int64 onto the evaluation stack indirectly.
     */
-  final val Ldind_I8 = new OpCode()
-  opcode(Ldind_I8, CEE_LDIND_I8, "ldind.i8", 0xFFFFFF4C, POP_I, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_I8 = OpCode(CEE_LDIND_I8, "ldind.i8", 0xFFFFFF4C, POP_I, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type natural int as a natural int onto the evaluation stack indirectly.
     */
-  final val Ldind_I = new OpCode()
-  opcode(Ldind_I, CEE_LDIND_I, "ldind.i", 0xFFFFFF4D, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_I = OpCode(CEE_LDIND_I, "ldind.i", 0xFFFFFF4D, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type float32 as a type F (float) onto the evaluation stack indirectly.
     */
-  final val Ldind_R4 = new OpCode()
-  opcode(Ldind_R4, CEE_LDIND_R4, "ldind.r4", 0xFFFFFF4E, POP_I, PUSH_R4, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_R4 = OpCode(CEE_LDIND_R4, "ldind.r4", 0xFFFFFF4E, POP_I, PUSH_R4, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type float64 as a type F (float) onto the evaluation stack indirectly.
     */
-  final val Ldind_R8 = new OpCode()
-  opcode(Ldind_R8, CEE_LDIND_R8, "ldind.r8", 0xFFFFFF4F, POP_I, PUSH_R8, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_R8 = OpCode(CEE_LDIND_R8, "ldind.r8", 0xFFFFFF4F, POP_I, PUSH_R8, INLINE_NONE, FLOW_NEXT)
 
   /** Loads an object reference as a type O (object reference) onto the evaluation stack indirectly.
     */
-  final val Ldind_Ref = new OpCode()
-  opcode(Ldind_Ref, CEE_LDIND_REF, "ldind.ref", 0xFFFFFF50, POP_I, PUSH_REF, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_Ref = OpCode(CEE_LDIND_REF, "ldind.ref", 0xFFFFFF50, POP_I, PUSH_REF, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type unsigned int8 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_U1 = new OpCode()
-  opcode(Ldind_U1, CEE_LDIND_U1, "ldind.u1", 0xFFFFFF47, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_U1 = OpCode(CEE_LDIND_U1, "ldind.u1", 0xFFFFFF47, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type unsigned int16 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_U2 = new OpCode()
-  opcode(Ldind_U2, CEE_LDIND_U2, "ldind.u2", 0xFFFFFF49, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_U2 = OpCode(CEE_LDIND_U2, "ldind.u2", 0xFFFFFF49, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads a value of type unsigned int32 as an int32 onto the evaluation stack indirectly.
     */
-  final val Ldind_U4 = new OpCode()
-  opcode(Ldind_U4, CEE_LDIND_U4, "ldind.u4", 0xFFFFFF4B, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldind_U4 = OpCode(CEE_LDIND_U4, "ldind.u4", 0xFFFFFF4B, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a object reference value at a supplied address.
     */
-  final val Stind_Ref = new OpCode()
-  opcode(Stind_Ref, CEE_STIND_REF, "stind.ref", 0xFFFFFF51, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_Ref = OpCode(CEE_STIND_REF, "stind.ref", 0xFFFFFF51, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type int8 at a supplied address.
     */
-  final val Stind_I1 = new OpCode()
-  opcode(Stind_I1, CEE_STIND_I1, "stind.i1", 0xFFFFFF52, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_I1 = OpCode(CEE_STIND_I1, "stind.i1", 0xFFFFFF52, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type int16 at a supplied address.
     */
-  final val Stind_I2 = new OpCode()
-  opcode(Stind_I2, CEE_STIND_I2, "stind.i2", 0xFFFFFF53, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_I2 = OpCode(CEE_STIND_I2, "stind.i2", 0xFFFFFF53, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type int32 at a supplied address.
     */
-  final val Stind_I4 = new OpCode()
-  opcode(Stind_I4, CEE_STIND_I4, "stind.i4", 0xFFFFFF54, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_I4 = OpCode(CEE_STIND_I4, "stind.i4", 0xFFFFFF54, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type int64 at a supplied address.
     */
-  final val Stind_I8 = new OpCode()
-  opcode(Stind_I8, CEE_STIND_I8, "stind.i8", 0xFFFFFF55, POP_I_I8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_I8 = OpCode(CEE_STIND_I8, "stind.i8", 0xFFFFFF55, POP_I_I8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type float32 at a supplied address.
     */
-  final val Stind_R4 = new OpCode()
-  opcode(Stind_R4, CEE_STIND_R4, "stind.r4", 0xFFFFFF56, POP_I_R4, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_R4 = OpCode(CEE_STIND_R4, "stind.r4", 0xFFFFFF56, POP_I_R4, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Stores a value of type float64 at a supplied address.
     */
-  final val Stind_R8 = new OpCode()
-  opcode(Stind_R8, CEE_STIND_R8, "stind.r8", 0xFFFFFF57, POP_I_R8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_R8 = OpCode(CEE_STIND_R8, "stind.r8", 0xFFFFFF57, POP_I_R8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Subtracts one value from another and pushes the result onto the evaluation stack.
     */
-  final val Sub = new OpCode()
-  opcode(Sub, CEE_SUB, "sub", 0xFFFFFF59, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Sub = OpCode(CEE_SUB, "sub", 0xFFFFFF59, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Multiplies two values and pushes the result on the evaluation stack.
     */
-  final val Mul = new OpCode()
-  opcode(Mul, CEE_MUL, "mul", 0xFFFFFF5A, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Mul = OpCode(CEE_MUL, "mul", 0xFFFFFF5A, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Divides two values and pushes the result as a floating-point (type F) or
     * quotient (type int32) onto the evaluation stack.
     */
-  final val Div = new OpCode()
-  opcode(Div, CEE_DIV, "div", 0xFFFFFF5B, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Div = OpCode(CEE_DIV, "div", 0xFFFFFF5B, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Divides two unsigned integer values and pushes the result (int32) onto the evaluation stack.
     */
-  final val Div_Un = new OpCode()
-  opcode(Div_Un, CEE_DIV_UN, "div.un", 0xFFFFFF5C, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Div_Un = OpCode(CEE_DIV_UN, "div.un", 0xFFFFFF5C, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Divides two values and pushes the remainder onto the evaluation stack.
     */
-  final val Rem = new OpCode()
-  opcode(Rem, CEE_REM, "rem", 0xFFFFFF5D, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Rem = OpCode(CEE_REM, "rem", 0xFFFFFF5D, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Divides two unsigned values and pushes the remainder onto the evaluation stack.
     */
-  final val Rem_Un = new OpCode()
-  opcode(Rem_Un, CEE_REM_UN, "rem.un", 0xFFFFFF5E, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Rem_Un = OpCode(CEE_REM_UN, "rem.un", 0xFFFFFF5E, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Computes the bitwise AND of two values and pushes the result onto the evaluation stack.
     */
-  final val And = new OpCode()
-  opcode(And, CEE_AND, "and", 0xFFFFFF5F, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val And = OpCode(CEE_AND, "and", 0xFFFFFF5F, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Compute the bitwise complement of the two integer values on top of the stack and
     * pushes the result onto the evaluation stack.
     */
-  final val Or = new OpCode()
-  opcode(Or, CEE_OR, "or", 0xFFFFFF60, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Or = OpCode(CEE_OR, "or", 0xFFFFFF60, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Computes the bitwise XOR of the top two values on the evaluation stack,
     * pushing the result onto the evaluation stack.
     */
-  final val Xor = new OpCode()
-  opcode(Xor, CEE_XOR, "xor", 0xFFFFFF61, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Xor = OpCode(CEE_XOR, "xor", 0xFFFFFF61, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Shifts an integer value to the left (in zeroes) by a specified number of bits,
     * pushing the result onto the evaluation stack.
     */
-  final val Shl = new OpCode()
-  opcode(Shl, CEE_SHL, "shl", 0xFFFFFF62, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Shl = OpCode(CEE_SHL, "shl", 0xFFFFFF62, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Shifts an integer value (in sign) to the right by a specified number of bits,
     * pushing the result onto the evaluation stack.
     */
-  final val Shr = new OpCode()
-  opcode(Shr, CEE_SHR, "shr", 0xFFFFFF63, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Shr = OpCode(CEE_SHR, "shr", 0xFFFFFF63, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Shifts an unsigned integer value (in zeroes) to the right by a specified number of bits,
     * pushing the result onto the evaluation stack.
     */
-  final val Shr_Un = new OpCode()
-  opcode(Shr_Un, CEE_SHR_UN, "shr.un", 0xFFFFFF64, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Shr_Un = OpCode(CEE_SHR_UN, "shr.un", 0xFFFFFF64, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Negates a value and pushes the result onto the evaluation stack.
     */
-  final val Neg = new OpCode()
-  opcode(Neg, CEE_NEG, "neg", 0xFFFFFF65, POP_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Neg = OpCode(CEE_NEG, "neg", 0xFFFFFF65, POP_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Computes the bitwise complement of the integer value on top of the stack and pushes
     * the result onto the evaluation stack as the same type.
     */
-  final val Not = new OpCode()
-  opcode(Not, CEE_NOT, "not", 0xFFFFFF66, POP_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Not = OpCode(CEE_NOT, "not", 0xFFFFFF66, POP_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to int8, then extends (pads) it to int32.
     */
-  final val Conv_I1 = new OpCode()
-  opcode(Conv_I1, CEE_CONV_I1, "conv.i1", 0xFFFFFF67, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_I1 = OpCode(CEE_CONV_I1, "conv.i1", 0xFFFFFF67, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to int16, then extends (pads) it to int32.
     */
-  final val Conv_I2 = new OpCode()
-  opcode(Conv_I2, CEE_CONV_I2, "conv.i2", 0xFFFFFF68, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_I2 = OpCode(CEE_CONV_I2, "conv.i2", 0xFFFFFF68, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to int32.
     */
-  final val Conv_I4 = new OpCode()
-  opcode(Conv_I4, CEE_CONV_I4, "conv.i4", 0xFFFFFF69, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_I4 = OpCode(CEE_CONV_I4, "conv.i4", 0xFFFFFF69, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to int64.
     */
-  final val Conv_I8 = new OpCode()
-  opcode(Conv_I8, CEE_CONV_I8, "conv.i8", 0xFFFFFF6A, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_I8 = OpCode(CEE_CONV_I8, "conv.i8", 0xFFFFFF6A, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to float32.
     */
-  final val Conv_R4 = new OpCode()
-  opcode(Conv_R4, CEE_CONV_R4, "conv.r4", 0xFFFFFF6B, POP_1, PUSH_R4, INLINE_NONE, FLOW_NEXT)
+  final val Conv_R4 = OpCode(CEE_CONV_R4, "conv.r4", 0xFFFFFF6B, POP_1, PUSH_R4, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to float64.
     */
-  final val Conv_R8 = new OpCode()
-  opcode(Conv_R8, CEE_CONV_R8, "conv.r8", 0xFFFFFF6C, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_R8 = OpCode(CEE_CONV_R8, "conv.r8", 0xFFFFFF6C, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to unsigned int32, and extends it to int32.
     */
-  final val Conv_U4 = new OpCode()
-  opcode(Conv_U4, CEE_CONV_U4, "conv.u4", 0xFFFFFF6D, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_U4 = OpCode(CEE_CONV_U4, "conv.u4", 0xFFFFFF6D, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to unsigned int64, and extends it to int64.
     */
-  final val Conv_U8 = new OpCode()
-  opcode(Conv_U8, CEE_CONV_U8, "conv.u8", 0xFFFFFF6E, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_U8 = OpCode(CEE_CONV_U8, "conv.u8", 0xFFFFFF6E, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Calls a late-bound method on an object, pushing the return value onto the evaluation stack.
     */
-  final val Callvirt = new OpCode()
-  opcode(Callvirt, CEE_CALLVIRT, "callvirt", 0xFFFFFF6F, POP_SPECIAL, PUSH_SPECIAL, INLINE_METHOD, FLOW_CALL)
+  final val Callvirt = OpCode(CEE_CALLVIRT, "callvirt", 0xFFFFFF6F, POP_SPECIAL, PUSH_SPECIAL, INLINE_METHOD, FLOW_CALL)
 
   /** Copies the value type located at the address of an object (type &, * or natural int)
     * to the address of the destination object (type &, * or natural int).
     */
-  final val Cpobj = new OpCode()
-  opcode(Cpobj, CEE_CPOBJ, "cpobj", 0xFFFFFF70, POP_I_I, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
+  final val Cpobj = OpCode(CEE_CPOBJ, "cpobj", 0xFFFFFF70, POP_I_I, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
 
   /** Copies the value type object pointed to by an address to the top of the evaluation stack.
     */
-  final val Ldobj = new OpCode()
-  opcode(Ldobj, CEE_LDOBJ, "ldobj", 0xFFFFFF71, POP_I, PUSH_1, INLINE_TYPE, FLOW_NEXT)
+  final val Ldobj = OpCode(CEE_LDOBJ, "ldobj", 0xFFFFFF71, POP_I, PUSH_1, INLINE_TYPE, FLOW_NEXT)
 
   /** Pushes a new object reference to a string literal stored in the metadata.
     */
-  final val Ldstr = new OpCode()
-  opcode(Ldstr, CEE_LDSTR, "ldstr", 0xFFFFFF72, POP_NONE, PUSH_REF, INLINE_STRING, FLOW_NEXT)
+  final val Ldstr = OpCode(CEE_LDSTR, "ldstr", 0xFFFFFF72, POP_NONE, PUSH_REF, INLINE_STRING, FLOW_NEXT)
 
   /** Creates a new object or a new instance of a value type, pushing an object reference
     * (type O) onto the evaluation stack.
     */
-  final val Newobj = new OpCode()
-  opcode(Newobj, CEE_NEWOBJ, "newobj", 0xFFFFFF73, POP_SPECIAL, PUSH_REF, INLINE_METHOD, FLOW_CALL)
+  final val Newobj = OpCode(CEE_NEWOBJ, "newobj", 0xFFFFFF73, POP_SPECIAL, PUSH_REF, INLINE_METHOD, FLOW_CALL)
 
   /** Attempts to cast an object passed by reference to the specified class.
     */
-  final val Castclass = new OpCode()
-  opcode(Castclass, CEE_CASTCLASS, "castclass", 0xFFFFFF74, POP_REF, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
+  final val Castclass = OpCode(CEE_CASTCLASS, "castclass", 0xFFFFFF74, POP_REF, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
 
   /** Tests whether an object reference (type O) is an instance of a particular class.
     */
-  final val Isinst = new OpCode()
-  opcode(Isinst, CEE_ISINST, "isinst", 0xFFFFFF75, POP_REF, PUSH_I, INLINE_TYPE, FLOW_NEXT)
+  final val Isinst = OpCode(CEE_ISINST, "isinst", 0xFFFFFF75, POP_REF, PUSH_I, INLINE_TYPE, FLOW_NEXT)
 
   /** Converts the unsigned integer value on top of the evaluation stack to float32.
     */
-  final val Conv_R_Un = new OpCode()
-  opcode(Conv_R_Un, CEE_CONV_R_UN, "conv.r.un", 0xFFFFFF76, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_R_Un = OpCode(CEE_CONV_R_UN, "conv.r.un", 0xFFFFFF76, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the boxed representation of a value type to its unboxed form.
     */
-  final val Unbox = new OpCode()
-  opcode(Unbox, CEE_UNBOX, "unbox", 0xFFFFFF79, POP_REF, PUSH_I, INLINE_TYPE, FLOW_NEXT)
+  final val Unbox = OpCode(CEE_UNBOX, "unbox", 0xFFFFFF79, POP_REF, PUSH_I, INLINE_TYPE, FLOW_NEXT)
 
   /** Throws the exception object currently on the evaluation stack.
     */
-  final val Throw = new OpCode()
-  opcode(Throw, CEE_THROW, "throw", 0xFFFFFF7A, POP_REF, PUSH_NONE, INLINE_NONE, FLOW_THROW)
+  final val Throw = OpCode(CEE_THROW, "throw", 0xFFFFFF7A, POP_REF, PUSH_NONE, INLINE_NONE, FLOW_THROW)
 
   /** Finds the value of a field in the object whose reference is currently
     * on the evaluation stack.
     */
-  final val Ldfld = new OpCode()
-  opcode(Ldfld, CEE_LDFLD, "ldfld", 0xFFFFFF7B, POP_REF, PUSH_1, INLINE_FIELD, FLOW_NEXT)
+  final val Ldfld = OpCode(CEE_LDFLD, "ldfld", 0xFFFFFF7B, POP_REF, PUSH_1, INLINE_FIELD, FLOW_NEXT)
 
   /** Finds the address of a field in the object whose reference is currently
     * on the evaluation stack.
     */
-  final val Ldflda = new OpCode()
-  opcode(Ldflda, CEE_LDFLDA, "ldflda", 0xFFFFFF7C, POP_REF, PUSH_I, INLINE_FIELD, FLOW_NEXT)
+  final val Ldflda = OpCode(CEE_LDFLDA, "ldflda", 0xFFFFFF7C, POP_REF, PUSH_I, INLINE_FIELD, FLOW_NEXT)
 
   /** Pushes the value of a static field onto the evaluation stack.
     */
-  final val Ldsfld = new OpCode()
-  opcode(Ldsfld, CEE_LDSFLD, "ldsfld", 0xFFFFFF7E, POP_NONE, PUSH_1, INLINE_FIELD, FLOW_NEXT)
+  final val Ldsfld = OpCode(CEE_LDSFLD, "ldsfld", 0xFFFFFF7E, POP_NONE, PUSH_1, INLINE_FIELD, FLOW_NEXT)
 
   /** Pushes the address of a static field onto the evaluation stack.
     */
-  final val Ldsflda = new OpCode()
-  opcode(Ldsflda, CEE_LDSFLDA, "ldsflda", 0xFFFFFF7F, POP_NONE, PUSH_I, INLINE_FIELD, FLOW_NEXT)
+  final val Ldsflda = OpCode(CEE_LDSFLDA, "ldsflda", 0xFFFFFF7F, POP_NONE, PUSH_I, INLINE_FIELD, FLOW_NEXT)
 
   /** Replaces the value stored in the field of an object reference or pointer with a new value.
     */
-  final val Stfld = new OpCode()
-  opcode(Stfld, CEE_STFLD, "stfld", 0xFFFFFF7D, POP_REF_1, PUSH_NONE, INLINE_FIELD, FLOW_NEXT)
+  final val Stfld = OpCode(CEE_STFLD, "stfld", 0xFFFFFF7D, POP_REF_1, PUSH_NONE, INLINE_FIELD, FLOW_NEXT)
 
   /** Replaces the value of a static field with a value from the evaluation stack.
     */
-  final val Stsfld = new OpCode()
-  opcode(Stsfld, CEE_STSFLD, "stsfld", 0xFFFFFF80, POP_1, PUSH_NONE, INLINE_FIELD, FLOW_NEXT)
+  final val Stsfld = OpCode(CEE_STSFLD, "stsfld", 0xFFFFFF80, POP_1, PUSH_NONE, INLINE_FIELD, FLOW_NEXT)
 
   /** Copies a value of a specified type from the evaluation stack into a supplied memory address.
     */
-  final val Stobj = new OpCode()
-  opcode(Stobj, CEE_STOBJ, "stobj", 0xFFFFFF81, POP_I_1, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
+  final val Stobj = OpCode(CEE_STOBJ, "stobj", 0xFFFFFF81, POP_I_1, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to signed int8 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I1_Un = new OpCode()
-  opcode(Conv_Ovf_I1_Un, CEE_CONV_OVF_I1_UN, "conv.ovf.i1.un", 0xFFFFFF82, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I1_Un = OpCode(CEE_CONV_OVF_I1_UN, "conv.ovf.i1.un", 0xFFFFFF82, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to signed int16 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I2_Un = new OpCode()
-  opcode(Conv_Ovf_I2_Un, CEE_CONV_OVF_I2_UN, "conv.ovf.i2.un", 0xFFFFFF83, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I2_Un = OpCode(CEE_CONV_OVF_I2_UN, "conv.ovf.i2.un", 0xFFFFFF83, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to signed int32,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I4_Un = new OpCode()
-  opcode(Conv_Ovf_I4_Un, CEE_CONV_OVF_I4_UN, "conv.ovf.i4.un", 0xFFFFFF84, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I4_Un = OpCode(CEE_CONV_OVF_I4_UN, "conv.ovf.i4.un", 0xFFFFFF84, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to signed int64,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I8_Un = new OpCode()
-  opcode(Conv_Ovf_I8_Un, CEE_CONV_OVF_I8_UN, "conv.ovf.i8.un", 0xFFFFFF85, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I8_Un = OpCode(CEE_CONV_OVF_I8_UN, "conv.ovf.i8.un", 0xFFFFFF85, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to signed natural int,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I_Un = new OpCode()
-  opcode(Conv_Ovf_I_Un, CEE_CONV_OVF_I_UN, "conv.ovf.i.un", 0xFFFFFF8A, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I_Un = OpCode(CEE_CONV_OVF_I_UN, "conv.ovf.i.un", 0xFFFFFF8A, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to unsigned int8 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U1_Un = new OpCode()
-  opcode(Conv_Ovf_U1_Un, CEE_CONV_OVF_U1_UN, "conv.ovf.u1.un", 0xFFFFFF86, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U1_Un = OpCode(CEE_CONV_OVF_U1_UN, "conv.ovf.u1.un", 0xFFFFFF86, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to unsigned int16 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U2_Un = new OpCode()
-  opcode(Conv_Ovf_U2_Un, CEE_CONV_OVF_U2_UN, "conv.ovf.u2.un", 0xFFFFFF87, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U2_Un = OpCode(CEE_CONV_OVF_U2_UN, "conv.ovf.u2.un", 0xFFFFFF87, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to unsigned int32,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U4_Un = new OpCode()
-  opcode(Conv_Ovf_U4_Un, CEE_CONV_OVF_U4_UN, "conv.ovf.u4.un", 0xFFFFFF88, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U4_Un = OpCode(CEE_CONV_OVF_U4_UN, "conv.ovf.u4.un", 0xFFFFFF88, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to unsigned int64,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U8_Un = new OpCode()
-  opcode(Conv_Ovf_U8_Un, CEE_CONV_OVF_U8_UN, "conv.ovf.u8.un", 0xFFFFFF89, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U8_Un = OpCode(CEE_CONV_OVF_U8_UN, "conv.ovf.u8.un", 0xFFFFFF89, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the unsigned value on top of the evaluation stack to unsigned natural int,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U_Un = new OpCode()
-  opcode(Conv_Ovf_U_Un, CEE_CONV_OVF_U_UN, "conv.ovf.u.un", 0xFFFFFF8B, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U_Un = OpCode(CEE_CONV_OVF_U_UN, "conv.ovf.u.un", 0xFFFFFF8B, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts a value type to an object reference (type O).
     */
-  final val Box = new OpCode()
-  opcode(Box, CEE_BOX, "box", 0xFFFFFF8C, POP_1, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
+  final val Box = OpCode(CEE_BOX, "box", 0xFFFFFF8C, POP_1, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
 
   /** Pushes an object reference to a new zero-based, one-dimensional array whose elements
     * are of a specific type onto the evaluation stack.
     */
-  final val Newarr = new OpCode()
-  opcode(Newarr, CEE_NEWARR, "newarr", 0xFFFFFF8D, POP_I, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
+  final val Newarr = OpCode(CEE_NEWARR, "newarr", 0xFFFFFF8D, POP_I, PUSH_REF, INLINE_TYPE, FLOW_NEXT)
 
   /** Pushes the number of elements of a zero-based, one-dimensional array
     * onto the evaluation stack.
     */
-  final val Ldlen = new OpCode()
-  opcode(Ldlen, CEE_LDLEN, "ldlen", 0xFFFFFF8E, POP_REF, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldlen = OpCode(CEE_LDLEN, "ldlen", 0xFFFFFF8E, POP_REF, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the address of the array element at a specified array index onto
     * the top of the evaluation stack as type & (managed pointer).
     */
-  final val Ldelema = new OpCode()
-  opcode(Ldelema, CEE_LDELEMA, "ldelema", 0xFFFFFF8F, POP_REF_I, PUSH_I, INLINE_TYPE, FLOW_NEXT)
+  final val Ldelema = OpCode(CEE_LDELEMA, "ldelema", 0xFFFFFF8F, POP_REF_I, PUSH_I, INLINE_TYPE, FLOW_NEXT)
 
   /** Loads the element with type natural int at a specified array index onto the top
     * of the evaluation stack as a natural int.
     */
-  final val Ldelem_I = new OpCode()
-  opcode(Ldelem_I, CEE_LDELEM_I, "ldelem.i", 0xFFFFFF97, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_I = OpCode(CEE_LDELEM_I, "ldelem.i", 0xFFFFFF97, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type int8 at a specified array index onto the top of the
     * evaluation stack as an int32.
     */
-  final val Ldelem_I1 = new OpCode()
-  opcode(Ldelem_I1, CEE_LDELEM_I1, "ldelem.i1", 0xFFFFFF90, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_I1 = OpCode(CEE_LDELEM_I1, "ldelem.i1", 0xFFFFFF90, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type int16 at a specified array index onto the top of
     * the evaluation stack as an int32.
     */
-  final val Ldelem_I2 = new OpCode()
-  opcode(Ldelem_I2, CEE_LDELEM_I2, "ldelem.i2", 0xFFFFFF92, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_I2 = OpCode(CEE_LDELEM_I2, "ldelem.i2", 0xFFFFFF92, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type int32 at a specified array index onto the top of the
     * evaluation stack as an int32.
     */
-  final val Ldelem_I4 = new OpCode()
-  opcode(Ldelem_I4, CEE_LDELEM_I4, "ldelem.i4", 0xFFFFFF94, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_I4 = OpCode(CEE_LDELEM_I4, "ldelem.i4", 0xFFFFFF94, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type int64 at a specified array index onto the top of the
     * evaluation stack as an int64.
     */
-  final val Ldelem_I8 = new OpCode()
-  opcode(Ldelem_I8, CEE_LDELEM_I8, "ldelem.i8", 0xFFFFFF96, POP_REF_I, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_I8 = OpCode(CEE_LDELEM_I8, "ldelem.i8", 0xFFFFFF96, POP_REF_I, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type float32 at a specified array index onto the top of the
     * evaluation stack as type F (float)
     */
-  final val Ldelem_R4 = new OpCode()
-  opcode(Ldelem_R4, CEE_LDELEM_R4, "ldelem.r4", 0xFFFFFF98, POP_REF_I, PUSH_R4, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_R4 = OpCode(CEE_LDELEM_R4, "ldelem.r4", 0xFFFFFF98, POP_REF_I, PUSH_R4, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type float64 at a specified array index onto the top of the
     * evaluation stack as type F (float) .
     */
-  final val Ldelem_R8 = new OpCode()
-  opcode(Ldelem_R8, CEE_LDELEM_R8, "ldelem.r8", 0xFFFFFF99, POP_REF_I, PUSH_R8, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_R8 = OpCode(CEE_LDELEM_R8, "ldelem.r8", 0xFFFFFF99, POP_REF_I, PUSH_R8, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element containing an object reference at a specified array index onto
     * the top of the evaluation stack as type O (object reference).
     */
-  final val Ldelem_Ref = new OpCode()
-  opcode(Ldelem_Ref, CEE_LDELEM_REF, "ldelem.ref", 0xFFFFFF9A, POP_REF_I, PUSH_REF, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_Ref = OpCode(CEE_LDELEM_REF, "ldelem.ref", 0xFFFFFF9A, POP_REF_I, PUSH_REF, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type unsigned int8 at a specified array index onto the top
     * of the evaluation stack as an int32.
     */
-  final val Ldelem_U1 = new OpCode()
-  opcode(Ldelem_U1, CEE_LDELEM_U1, "ldelem.u1", 0xFFFFFF91, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_U1 = OpCode(CEE_LDELEM_U1, "ldelem.u1", 0xFFFFFF91, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type unsigned int16 at a specified array index onto the top
     * of the evaluation stack as an int32.
     */
-  final val Ldelem_U2 = new OpCode()
-  opcode(Ldelem_U2, CEE_LDELEM_U2, "ldelem.u2", 0xFFFFFF93, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_U2 = OpCode(CEE_LDELEM_U2, "ldelem.u2", 0xFFFFFF93, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Loads the element with type unsigned int32 at a specified array index onto the top
     * of the evaluation stack as an int32.
     */
-  final val Ldelem_U4 = new OpCode()
-  opcode(Ldelem_U4, CEE_LDELEM_U4, "ldelem.u4", 0xFFFFFF95, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ldelem_U4 = OpCode(CEE_LDELEM_U4, "ldelem.u4", 0xFFFFFF95, POP_REF_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the natural int value on
     * the evaluation stack.
     */
-  final val Stelem_I = new OpCode()
-  opcode(Stelem_I, CEE_STELEM_I, "stelem.i", 0xFFFFFF9B, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_I = OpCode(CEE_STELEM_I, "stelem.i", 0xFFFFFF9B, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the int8 value on the evaluation stack.
     */
-  final val Stelem_I1 = new OpCode()
-  opcode(Stelem_I1, CEE_STELEM_I1, "stelem.i1", 0xFFFFFF9C, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_I1 = OpCode(CEE_STELEM_I1, "stelem.i1", 0xFFFFFF9C, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the int16 value on the evaluation stack.
     */
-  final val Stelem_I2 = new OpCode()
-  opcode(Stelem_I2, CEE_STELEM_I2, "stelem.i2", 0xFFFFFF9D, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_I2 = OpCode(CEE_STELEM_I2, "stelem.i2", 0xFFFFFF9D, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the int32 value on the evaluation stack.
     */
-  final val Stelem_I4 = new OpCode()
-  opcode(Stelem_I4, CEE_STELEM_I4, "stelem.i4", 0xFFFFFF9E, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_I4 = OpCode(CEE_STELEM_I4, "stelem.i4", 0xFFFFFF9E, POP_REF_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the int64 value on the evaluation stack.
     */
-  final val Stelem_I8 = new OpCode()
-  opcode(Stelem_I8, CEE_STELEM_I8, "stelem.i8", 0xFFFFFF9F, POP_REF_I_I8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_I8 = OpCode(CEE_STELEM_I8, "stelem.i8", 0xFFFFFF9F, POP_REF_I_I8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the float32 value on the evaluation stack.
     */
-  final val Stelem_R4 = new OpCode()
-  opcode(Stelem_R4, CEE_STELEM_R4, "stelem.r4", 0xFFFFFFA0, POP_REF_I_R4, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_R4 = OpCode(CEE_STELEM_R4, "stelem.r4", 0xFFFFFFA0, POP_REF_I_R4, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the float64 value on the evaluation stack.
     */
-  final val Stelem_R8 = new OpCode()
-  opcode(Stelem_R8, CEE_STELEM_R8, "stelem.r8", 0xFFFFFFA1, POP_REF_I_R8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_R8 = OpCode(CEE_STELEM_R8, "stelem.r8", 0xFFFFFFA1, POP_REF_I_R8, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Replaces the array element at a given index with the object ref value (type O)
     * on the evaluation stack.
     */
-  final val Stelem_Ref = new OpCode()
-  opcode(Stelem_Ref, CEE_STELEM_REF, "stelem.ref", 0xFFFFFFA2, POP_REF_I_REF, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stelem_Ref = OpCode(CEE_STELEM_REF, "stelem.ref", 0xFFFFFFA2, POP_REF_I_REF, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to signed int8 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I1 = new OpCode()
-  opcode(Conv_Ovf_I1, CEE_CONV_OVF_I1, "conv.ovf.i1", 0xFFFFFFB3, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I1 = OpCode(CEE_CONV_OVF_I1, "conv.ovf.i1", 0xFFFFFFB3, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to signed int16 and
     * extending it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I2 = new OpCode()
-  opcode(Conv_Ovf_I2, CEE_CONV_OVF_I2, "conv.ovf.i2", 0xFFFFFFB5, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I2 = OpCode(CEE_CONV_OVF_I2, "conv.ovf.i2", 0xFFFFFFB5, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to signed int32,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I4 = new OpCode()
-  opcode(Conv_Ovf_I4, CEE_CONV_OVF_I4, "conv.ovf.i4", 0xFFFFFFB7, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I4 = OpCode(CEE_CONV_OVF_I4, "conv.ovf.i4", 0xFFFFFFB7, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to signed int64,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I8 = new OpCode()
-  opcode(Conv_Ovf_I8, CEE_CONV_OVF_I8, "conv.ovf.i8", 0xFFFFFFB9, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I8 = OpCode(CEE_CONV_OVF_I8, "conv.ovf.i8", 0xFFFFFFB9, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to unsigned int8 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U1 = new OpCode()
-  opcode(Conv_Ovf_U1, CEE_CONV_OVF_U1, "conv.ovf.u1", 0xFFFFFFB4, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U1 = OpCode(CEE_CONV_OVF_U1, "conv.ovf.u1", 0xFFFFFFB4, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to unsigned int16 and
     * extends it to int32, throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U2 = new OpCode()
-  opcode(Conv_Ovf_U2, CEE_CONV_OVF_U2, "conv.ovf.u2", 0xFFFFFFB6, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U2 = OpCode(CEE_CONV_OVF_U2, "conv.ovf.u2", 0xFFFFFFB6, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to unsigned int32,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U4 = new OpCode()
-  opcode(Conv_Ovf_U4, CEE_CONV_OVF_U4, "conv.ovf.u4", 0xFFFFFFB8, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U4 = OpCode(CEE_CONV_OVF_U4, "conv.ovf.u4", 0xFFFFFFB8, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to unsigned int64,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U8 = new OpCode()
-  opcode(Conv_Ovf_U8, CEE_CONV_OVF_U8, "conv.ovf.u8", 0xFFFFFFBA, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U8 = OpCode(CEE_CONV_OVF_U8, "conv.ovf.u8", 0xFFFFFFBA, POP_1, PUSH_I8, INLINE_NONE, FLOW_NEXT)
 
   /** Retrieves the address (type &) embedded in a typed reference.
     */
-  final val Refanyval = new OpCode()
-  opcode(Refanyval, CEE_REFANYVAL, "refanyval", 0xFFFFFFC2, POP_1, PUSH_I, INLINE_TYPE, FLOW_NEXT)
+  final val Refanyval = OpCode(CEE_REFANYVAL, "refanyval", 0xFFFFFFC2, POP_1, PUSH_I, INLINE_TYPE, FLOW_NEXT)
 
   /** Retrieves the type token embedded in a typed reference .
     */
-  final val Refanytype = new OpCode()
-  opcode(Refanytype, CEE_REFANYTYPE, "refanytype", 0xFFFFFE1D, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Refanytype = OpCode(CEE_REFANYTYPE, "refanytype", 0xFFFFFE1D, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Throws ArithmeticException if value is not a finite number.
     */
-  final val Ckfinite = new OpCode()
-  opcode(Ckfinite, CEE_CKFINITE, "ckfinite", 0xFFFFFFC3, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
+  final val Ckfinite = OpCode(CEE_CKFINITE, "ckfinite", 0xFFFFFFC3, POP_1, PUSH_R8, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes a typed reference to an instance of a specific type onto the evaluation stack.
     */
-  final val Mkrefany = new OpCode()
-  opcode(Mkrefany, CEE_MKREFANY, "mkrefany", 0xFFFFFFC6, POP_I, PUSH_1, INLINE_TYPE, FLOW_NEXT)
+  final val Mkrefany = OpCode(CEE_MKREFANY, "mkrefany", 0xFFFFFFC6, POP_I, PUSH_1, INLINE_TYPE, FLOW_NEXT)
 
   /** Converts a metadata token to its runtime representation, pushing it onto the evaluation stack.
     */
-  final val Ldtoken = new OpCode()
-  opcode(Ldtoken, CEE_LDTOKEN, "ldtoken", 0xFFFFFFD0, POP_NONE, PUSH_I, INLINE_TOKEN, FLOW_NEXT)
+  final val Ldtoken = OpCode(CEE_LDTOKEN, "ldtoken", 0xFFFFFFD0, POP_NONE, PUSH_I, INLINE_TOKEN, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to unsigned int8, and extends it to int32.
     */
-  final val Conv_U1 = new OpCode()
-  opcode(Conv_U1, CEE_CONV_U1, "conv.u1", 0xFFFFFFD2, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_U1 = OpCode(CEE_CONV_U1, "conv.u1", 0xFFFFFFD2, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to unsigned int16, and extends it to int32.
     */
-  final val Conv_U2 = new OpCode()
-  opcode(Conv_U2, CEE_CONV_U2, "conv.u2", 0xFFFFFFD1, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_U2 = OpCode(CEE_CONV_U2, "conv.u2", 0xFFFFFFD1, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to natural int.
     */
-  final val Conv_I = new OpCode()
-  opcode(Conv_I, CEE_CONV_I, "conv.i", 0xFFFFFFD3, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_I = OpCode(CEE_CONV_I, "conv.i", 0xFFFFFFD3, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to signed natural int,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_I = new OpCode()
-  opcode(Conv_Ovf_I, CEE_CONV_OVF_I, "conv.ovf.i", 0xFFFFFFD4, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_I = OpCode(CEE_CONV_OVF_I, "conv.ovf.i", 0xFFFFFFD4, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the signed value on top of the evaluation stack to unsigned natural int,
     * throwing OverflowException on overflow.
     */
-  final val Conv_Ovf_U = new OpCode()
-  opcode(Conv_Ovf_U, CEE_CONV_OVF_U, "conv.ovf.u", 0xFFFFFFD5, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_Ovf_U = OpCode(CEE_CONV_OVF_U, "conv.ovf.u", 0xFFFFFFD5, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Adds two integers, performs an overflow check, and pushes the result
     * onto the evaluation stack.
     */
-  final val Add_Ovf = new OpCode()
-  opcode(Add_Ovf, CEE_ADD_OVF, "add.ovf", 0xFFFFFFD6, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Add_Ovf = OpCode(CEE_ADD_OVF, "add.ovf", 0xFFFFFFD6, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Adds two unsigned integer values, performs an overflow check, and pushes the result
     * onto the evaluation stack.
     */
-  final val Add_Ovf_Un = new OpCode()
-  opcode(Add_Ovf_Un, CEE_ADD_OVF_UN, "add.ovf.un", 0xFFFFFFD7, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Add_Ovf_Un = OpCode(CEE_ADD_OVF_UN, "add.ovf.un", 0xFFFFFFD7, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Multiplies two integer values, performs an overflow check, and pushes the result
     * onto the evaluation stack.
     */
-  final val Mul_Ovf = new OpCode()
-  opcode(Mul_Ovf, CEE_MUL_OVF, "mul.ovf", 0xFFFFFFD8, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Mul_Ovf = OpCode(CEE_MUL_OVF, "mul.ovf", 0xFFFFFFD8, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Multiplies two unsigned integer values , performs an overflow check ,
     * and pushes the result onto the evaluation stack.
     */
-  final val Mul_Ovf_Un = new OpCode()
-  opcode(Mul_Ovf_Un, CEE_MUL_OVF_UN, "mul.ovf.un", 0xFFFFFFD9, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Mul_Ovf_Un = OpCode(CEE_MUL_OVF_UN, "mul.ovf.un", 0xFFFFFFD9, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Subtracts one integer value from another, performs an overflow check,
     * and pushes the result onto the evaluation stack.
     */
-  final val Sub_Ovf = new OpCode()
-  opcode(Sub_Ovf, CEE_SUB_OVF, "sub.ovf", 0xFFFFFFDA, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Sub_Ovf = OpCode(CEE_SUB_OVF, "sub.ovf", 0xFFFFFFDA, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Subtracts one unsigned integer value from another, performs an overflow check,
     * and pushes the result onto the evaluation stack.
     */
-  final val Sub_Ovf_Un = new OpCode()
-  opcode(Sub_Ovf_Un, CEE_SUB_OVF_UN, "sub.ovf.un", 0xFFFFFFDB, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
+  final val Sub_Ovf_Un = OpCode(CEE_SUB_OVF_UN, "sub.ovf.un", 0xFFFFFFDB, POP_1_1, PUSH_1, INLINE_NONE, FLOW_NEXT)
 
   /** Transfers control from the fault or finally clause of an exception block back to
     * the Common Language Infrastructure (CLI) exception handler.
     */
-  final val Endfinally = new OpCode()
-  opcode(Endfinally, CEE_ENDFINALLY, "endfinally", 0xFFFFFFDC, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
+  final val Endfinally = OpCode(CEE_ENDFINALLY, "endfinally", 0xFFFFFFDC, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
 
   /** Exits a protected region of code, unconditionally tranferring control
     * to a specific target instruction.
     */
-  final val Leave = new OpCode()
-  opcode(Leave, CEE_LEAVE, "leave", 0xFFFFFFDD, POP_NONE, PUSH_NONE, INLINE_TARGET, FLOW_BRANCH)
+  final val Leave = OpCode(CEE_LEAVE, "leave", 0xFFFFFFDD, POP_NONE, PUSH_NONE, INLINE_TARGET, FLOW_BRANCH)
 
   /** Exits a protected region of code, unconditionally tranferring control
     * to a target instruction (short form).
     */
-  final val Leave_S = new OpCode()
-  opcode(Leave_S, CEE_LEAVE_S, "leave.s", 0xFFFFFFDE, POP_NONE, PUSH_NONE, INLINE_TARGET_S, FLOW_BRANCH)
+  final val Leave_S = OpCode(CEE_LEAVE_S, "leave.s", 0xFFFFFFDE, POP_NONE, PUSH_NONE, INLINE_TARGET_S, FLOW_BRANCH)
 
   /** Stores a value of type natural int at a supplied address.
     */
-  final val Stind_I = new OpCode()
-  opcode(Stind_I, CEE_STIND_I, "stind.i", 0xFFFFFFDF, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Stind_I = OpCode(CEE_STIND_I, "stind.i", 0xFFFFFFDF, POP_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Converts the value on top of the evaluation stack to unsigned natural int,
     * and extends it to natural int.
     */
-  final val Conv_U = new OpCode()
-  opcode(Conv_U, CEE_CONV_U, "conv.u", 0xFFFFFFE0, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Conv_U = OpCode(CEE_CONV_U, "conv.u", 0xFFFFFFE0, POP_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Returns an unmanaged pointer to the argument list of the current method.
     */
-  final val Arglist = new OpCode()
-  opcode(Arglist, CEE_ARGLIST, "arglist", 0xFFFFFE00, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Arglist = OpCode(CEE_ARGLIST, "arglist", 0xFFFFFE00, POP_NONE, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Compares two values. If they are equal, the integer value 1 (int32) is pushed
     * onto the evaluation stack otherwise 0 (int32) is pushed onto the evaluation stack.
     */
-  final val Ceq = new OpCode()
-  opcode(Ceq, CEE_CEQ, "ceq", 0xFFFFFE01, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Ceq = OpCode(CEE_CEQ, "ceq", 0xFFFFFE01, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Compares two values. If the first value is greater than the second,
     * the integer value 1 (int32) is pushed onto the evaluation stack
     * otherwise 0 (int32) is pushed onto the evaluation stack.
     */
-  final val Cgt = new OpCode()
-  opcode(Cgt, CEE_CGT, "cgt", 0xFFFFFE02, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Cgt = OpCode(CEE_CGT, "cgt", 0xFFFFFE02, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Compares two unsigned or unordered values. If the first value is greater than
     * the second, the integer value 1 (int32) is pushed onto the evaluation stack
     * otherwise 0 (int32) is pushed onto the evaluation stack.
     */
-  final val Cgt_Un = new OpCode()
-  opcode(Cgt_Un, CEE_CGT_UN, "cgt.un", 0xFFFFFE03, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Cgt_Un = OpCode(CEE_CGT_UN, "cgt.un", 0xFFFFFE03, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Compares two values. If the first value is less than the second,
     * the integer value 1 (int32) is pushed onto the evaluation stack
     * otherwise 0 (int32) is pushed onto the evaluation stack.
     */
-  final val Clt = new OpCode()
-  opcode(Clt, CEE_CLT, "clt", 0xFFFFFE04, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Clt = OpCode(CEE_CLT, "clt", 0xFFFFFE04, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Compares the unsigned or unordered values value1 and value2. If value1 is
     * less than value2, then the integer value 1 (int32) is pushed onto the
     * evaluation stack otherwise 0 (int32) is pushed onto the evaluation stack.
     */
-  final val Clt_Un = new OpCode()
-  opcode(Clt_Un, CEE_CLT_UN, "clt.un", 0xFFFFFE05, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Clt_Un = OpCode(CEE_CLT_UN, "clt.un", 0xFFFFFE05, POP_1_1, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Pushes an unmanaged pointer (type natural int) to the native code implementing
     * a specific method onto the evaluation stack.
     */
-  final val Ldftn = new OpCode()
-  opcode(Ldftn, CEE_LDFTN, "ldftn", 0xFFFFFE06, POP_NONE, PUSH_I, INLINE_METHOD, FLOW_NEXT)
+  final val Ldftn = OpCode(CEE_LDFTN, "ldftn", 0xFFFFFE06, POP_NONE, PUSH_I, INLINE_METHOD, FLOW_NEXT)
 
   /** Pushes an unmanaged pointer (type natural int) to the native code implementing
     * a particular virtual method associated with a specified object onto the evaluation stack.
     */
-  final val Ldvirtftn = new OpCode()
-  opcode(Ldvirtftn, CEE_LDVIRTFTN, "ldvirtftn", 0xFFFFFE07, POP_REF, PUSH_I, INLINE_METHOD, FLOW_NEXT)
+  final val Ldvirtftn = OpCode(CEE_LDVIRTFTN, "ldvirtftn", 0xFFFFFE07, POP_REF, PUSH_I, INLINE_METHOD, FLOW_NEXT)
 
   /** Loads an argument (referenced by a specified index value) onto the stack.
     */
-  final val Ldarg = new OpCode()
-  opcode(Ldarg, CEE_LDARG, "ldarg", 0xFFFFFE09, POP_NONE, PUSH_1, INLINE_VARIABLE, FLOW_NEXT)
+  final val Ldarg = OpCode(CEE_LDARG, "ldarg", 0xFFFFFE09, POP_NONE, PUSH_1, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Load an argument address onto the evaluation stack.
     */
-  final val Ldarga = new OpCode()
-  opcode(Ldarga, CEE_LDARGA, "ldarga", 0xFFFFFE0A, POP_NONE, PUSH_I, INLINE_VARIABLE, FLOW_NEXT)
+  final val Ldarga = OpCode(CEE_LDARGA, "ldarga", 0xFFFFFE0A, POP_NONE, PUSH_I, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Loads the local variable at a specific index onto the evaluation stack.
     */
-  final val Ldloc = new OpCode()
-  opcode(Ldloc, CEE_LDLOC, "ldloc", 0xFFFFFE0C, POP_NONE, PUSH_1, INLINE_VARIABLE, FLOW_NEXT)
+  final val Ldloc = OpCode(CEE_LDLOC, "ldloc", 0xFFFFFE0C, POP_NONE, PUSH_1, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Loads the address of the local variable at a specific index onto the evaluation stack.
     */
-  final val Ldloca = new OpCode()
-  opcode(Ldloca, CEE_LDLOCA, "ldloca", 0xFFFFFE0D, POP_NONE, PUSH_I, INLINE_VARIABLE, FLOW_NEXT)
+  final val Ldloca = OpCode(CEE_LDLOCA, "ldloca", 0xFFFFFE0D, POP_NONE, PUSH_I, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Stores the value on top of the evaluation stack in the argument slot at a specified index.
     */
-  final val Starg = new OpCode()
-  opcode(Starg, CEE_STARG, "starg", 0xFFFFFE0B, POP_1, PUSH_NONE, INLINE_VARIABLE, FLOW_NEXT)
+  final val Starg = OpCode(CEE_STARG, "starg", 0xFFFFFE0B, POP_1, PUSH_NONE, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Pops the current value from the top of the evaluation stack and stores it in a
     * the local variable list at a specified index.
     */
-  final val Stloc = new OpCode()
-  opcode(Stloc, CEE_STLOC, "stloc", 0xFFFFFE0E, POP_1, PUSH_NONE, INLINE_VARIABLE, FLOW_NEXT)
+  final val Stloc = OpCode(CEE_STLOC, "stloc", 0xFFFFFE0E, POP_1, PUSH_NONE, INLINE_VARIABLE, FLOW_NEXT)
 
   /** Allocates a certain number of bytes from the local dynamic memory pool and pushes the
     * address (a transient pointer, type *) of the first allocated Byte onto the evaluation stack.
     */
-  final val Localloc = new OpCode()
-  opcode(Localloc, CEE_LOCALLOC, "localloc", 0xFFFFFE0F, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
+  final val Localloc = OpCode(CEE_LOCALLOC, "localloc", 0xFFFFFE0F, POP_I, PUSH_I, INLINE_NONE, FLOW_NEXT)
 
   /** Transfers control from the filter clause of an exception back to the
     * Common Language Infrastructure (CLI) exception handler.
     */
-  final val Endfilter = new OpCode()
-  opcode(Endfilter, CEE_ENDFILTER, "endfilter", 0xFFFFFE11, POP_I, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
+  final val Endfilter = OpCode(CEE_ENDFILTER, "endfilter", 0xFFFFFE11, POP_I, PUSH_NONE, INLINE_NONE, FLOW_RETURN)
 
   /** Indicates that an address currently atop the evaluation stack might not be aligned
     * to the natural size of the immediately following ldind, stind, ldfld, stfld, ldobj,
     * stobj, initblk, or cpblk instruction.
     */
-  final val Unaligned = new OpCode()
-  opcode(Unaligned, CEE_UNALIGNED, "unaligned.", 0xFFFFFE12, POP_NONE, PUSH_NONE, INLINE_I_S, FLOW_META)
+  final val Unaligned = OpCode(CEE_UNALIGNED, "unaligned.", 0xFFFFFE12, POP_NONE, PUSH_NONE, INLINE_I_S, FLOW_META)
 
   /** Specifies that an address currently atop the evaluation stack might be volatile,
     * and the results of reading that location cannot be cached or that multiple stores
     * to that location cannot be suppressed.
     */
-  final val Volatile = new OpCode()
-  opcode(Volatile, CEE_VOLATILE, "volatile.", 0xFFFFFE13, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_META)
+  final val Volatile = OpCode(CEE_VOLATILE, "volatile.", 0xFFFFFE13, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_META)
 
   /** Performs a postfixed method call instruction such that the current method's stack
     * frame is removed before the actual call instruction is executed.
     */
-  final val Tailcall = new OpCode()
-  opcode(Tailcall, CEE_TAILCALL, "tail.", 0xFFFFFE14, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_META)
+  final val Tailcall = OpCode(CEE_TAILCALL, "tail.", 0xFFFFFE14, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_META)
 
   /** Initializes all the fields of the object at a specific address to a null reference
     * or a 0 of the appropriate primitive type.
     */
-  final val Initobj = new OpCode()
-  opcode(Initobj, CEE_INITOBJ, "initobj", 0xFFFFFE15, POP_I, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
+  final val Initobj = OpCode(CEE_INITOBJ, "initobj", 0xFFFFFE15, POP_I, PUSH_NONE, INLINE_TYPE, FLOW_NEXT)
 
   /** Copies a specified number bytes from a source address to a destination address .
     */
-  final val Cpblk = new OpCode()
-  opcode(Cpblk, CEE_CPBLK, "cpblk", 0xFFFFFE17, POP_I_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Cpblk = OpCode(CEE_CPBLK, "cpblk", 0xFFFFFE17, POP_I_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Initializes a specified block of memory at a specific address to a given size
     * and initial value.
     */
-  final val Initblk = new OpCode()
-  opcode(Initblk, CEE_INITBLK, "initblk", 0xFFFFFE18, POP_I_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
+  final val Initblk = OpCode(CEE_INITBLK, "initblk", 0xFFFFFE18, POP_I_I_I, PUSH_NONE, INLINE_NONE, FLOW_NEXT)
 
   /** Rethrows the current exception.
     */
-  final val Rethrow = new OpCode()
-  opcode(Rethrow, CEE_RETHROW, "rethrow", 0xFFFFFE1A, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_THROW)
+  final val Rethrow = OpCode(CEE_RETHROW, "rethrow", 0xFFFFFE1A, POP_NONE, PUSH_NONE, INLINE_NONE, FLOW_THROW)
 
   /** Pushes the size, in bytes, of a supplied value type onto the evaluation stack.
     */
-  final val Sizeof = new OpCode()
-  opcode(Sizeof, CEE_SIZEOF, "sizeof", 0xFFFFFE1C, POP_NONE, PUSH_I, INLINE_TYPE, FLOW_NEXT)
+  final val Sizeof = OpCode(CEE_SIZEOF, "sizeof", 0xFFFFFE1C, POP_NONE, PUSH_I, INLINE_TYPE, FLOW_NEXT)
 
   //##########################################################################
 }
