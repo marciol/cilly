@@ -20,7 +20,7 @@ class ConstructorInfo(name: String, declType: Type, attrs: Int, params: Array[Pa
 
   final def memberType = MemberTypes.Constructor
 
-  override final def IsConstructor = true
+  override final def isConstructor = true
 
   /** Public constructors */
 

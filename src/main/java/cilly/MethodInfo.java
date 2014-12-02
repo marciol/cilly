@@ -13,18 +13,18 @@ package cilly;
 public class MethodInfo extends MethodBase {
 
     @Override
-    public boolean HasPtrParamOrRetType() {
-        if (ReturnType.isByRef() && !(ReturnType.getElementType().isValueType())) {
+    public boolean hasPtrParamOrRetType() {
+        if (returnType.isByRef() && !(returnType.getElementType().isValueType())) {
             /*
              * A method returning ByRef won't pass peverify, so I guess this is
              * dead code.
              */
             return true;
         }
-        if (ReturnType.isPointer()) {
+        if (returnType.isPointer()) {
             return true;
         }
-        return super.HasPtrParamOrRetType();
+        return super.hasPtrParamOrRetType();
     }
 
     // ##########################################################################
@@ -36,14 +36,14 @@ public class MethodInfo extends MethodBase {
     }
 
     @Override
-    public final boolean IsConstructor() {
+    public final boolean isConstructor() {
         return false;
     }
 
     /**
      * The return type of this method.
      */
-    public final Type ReturnType;
+    public final Type returnType;
 
     // ##########################################################################
     // protected members
@@ -55,14 +55,14 @@ public class MethodInfo extends MethodBase {
      */
     protected MethodInfo(String name, Type declType, int attrs, Type returnType, Type[] paramTypes) {
         super(name, declType, attrs, paramTypes);
-        this.ReturnType = returnType;
+        this.returnType = returnType;
         this.name = name;
         this.declaringType = declType;
     }
 
     protected MethodInfo(String name, Type declType, int attrs, Type returnType, ParameterInfo[] params) {
         super(name, declType, attrs, params);
-        this.ReturnType = returnType;
+        this.returnType = returnType;
         this.name = name;
         this.declaringType = declType;
     }
@@ -72,7 +72,7 @@ public class MethodInfo extends MethodBase {
 
     @Override
     public String toString() {
-        return MethodAttributes.toString(Attributes) + " " + ReturnType +
+        return MethodAttributes.toString(Attributes) + " " + returnType +
                 " " + declaringType + "::" + name + params2String();
     }
 

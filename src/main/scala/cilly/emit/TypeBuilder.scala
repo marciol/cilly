@@ -230,7 +230,7 @@ object TypeBuilder {
   def methodsEqual(m1: MethodInfo, m2: MethodInfo): Boolean = {
     if (m1.name != m2.name)
       return false
-    if (m1.ReturnType != m2.ReturnType)
+    if (m1.returnType != m2.returnType)
       return false
     val p1 = m1.getParameters()
     val p2 = m2.getParameters()

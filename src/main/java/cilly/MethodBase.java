@@ -41,7 +41,7 @@ public abstract class MethodBase extends MemberInfo {
         return sortedMVars;
     }
 
-    public final boolean IsGeneric() {
+    public final boolean isGeneric() {
         return mVars.size() > 0;
     }
 
@@ -49,63 +49,63 @@ public abstract class MethodBase extends MemberInfo {
     public final short Attributes;
 
     /***/
-    public final short CallingConvention;
+    public final short callingConvention;
 
-    public abstract boolean IsConstructor();
+    public abstract boolean isConstructor();
 
     public final boolean isAbstract() {
         return (Attributes & MethodAttributes.Abstract) != 0;
     }
 
-    public final boolean IsFinal() {
+    public final boolean isFinal() {
         return (Attributes & MethodAttributes.Final) != 0;
     }
 
-    public final boolean IsVirtual() {
+    public final boolean isVirtual() {
         return (Attributes & MethodAttributes.Virtual) != 0;
     }
 
-    public final boolean IsInstance() {
-        return !isStatic() && !IsVirtual();
+    public final boolean isInstance() {
+        return !isStatic() && !isVirtual();
     }
 
     public final boolean isStatic() {
         return (Attributes & MethodAttributes.Static) != 0;
     }
 
-    public final boolean IsHideBySig() {
+    public final boolean isHideBySig() {
         return (Attributes & MethodAttributes.HideBySig) != 0;
     }
 
-    public final boolean IsSpecialName() {
+    public final boolean isSpecialName() {
         return (Attributes & MethodAttributes.SpecialName) != 0;
     }
 
-    public final boolean IsPublic() {
+    public final boolean isPublic() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Public;
     }
 
-    public final boolean IsPrivate() {
+    public final boolean isPrivate() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Private;
     }
 
-    public final boolean IsFamily() {
+    public final boolean isFamily() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Family;
     }
 
-    public final boolean IsAssembly() {
+    public final boolean isAssembly() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.Assembly;
     }
 
-    public final boolean IsFamilyOrAssembly() {
+    public final boolean isFamilyOrAssembly() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamORAssem;
     }
 
-    public final boolean IsFamilyAndAssembly() {
+    public final boolean isFamilyAndAssembly() {
         return (Attributes & MethodAttributes.MemberAccessMask) == MethodAttributes.FamANDAssem;
     }
 
-    public boolean HasPtrParamOrRetType() {
+    public boolean hasPtrParamOrRetType() {
         // the override in MethodInfo checks the return type
         ParameterInfo[] ps = getParameters();
         for (int i = 0; i < ps.length; i++) {
@@ -171,12 +171,12 @@ public abstract class MethodBase extends MemberInfo {
 
         Attributes = (short) attrs;
 
-        if (IsConstructor()) {
+        if (isConstructor()) {
             attrs |= MethodAttributes.SpecialName;
             attrs |= MethodAttributes.RTSpecialName;
         }
 
-        CallingConvention = (short) (CallingConventions.Standard() | (isStatic() ? (short) 0 : CallingConventions.HasThis()));
+        callingConvention = (short) (CallingConventions.Standard() | (isStatic() ? (short) 0 : CallingConventions.HasThis()));
     }
 
     public final String name;

@@ -169,16 +169,16 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // pop size is the number of parameters
     // pop 1 more if method is not static !
     // push size is either 0 (void Method) either 1
-    assert(arg.ReturnType != null, "No ReturnType: " + arg.declaringType + "::" + arg.name)
+    assert(arg.returnType != null, "No ReturnType: " + arg.declaringType + "::" + arg.name)
 
     val popush: Int = if (opcode == OpCode.Ldftn ||
       opcode == OpCode.Ldvirtftn ||
       opcode == OpCode.Jmp) {
       OpCode.PUSH_size(opcode.CEE_push) - OpCode.POP_size(opcode.CEE_pop)
     } else if (opcode == OpCode.Calli || opcode == OpCode.Callvirt) {
-      (if (arg.ReturnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length - 1
+      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length - 1
     } else {
-      (if (arg.ReturnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length
+      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length
     }
     emit(opcode, arg, popush)
   }
@@ -226,7 +226,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // pop size is the number of parameters
     // push size is either 0 (void Method) either 1
     //System.out.println(arg.ReturnType.Size + " " + arg.GetParameters().length);
-    emit(opcode, arg, (if (arg.ReturnType == Common.SystemVoid) 0 else 1) -
+    emit(opcode, arg, (if (arg.returnType == Common.SystemVoid) 0 else 1) -
       arg.getParameters().length)
   }
 

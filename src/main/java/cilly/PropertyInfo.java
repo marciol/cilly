@@ -64,7 +64,7 @@ public class PropertyInfo extends MemberInfo {
      */
     public MethodInfo GetGetMethod(boolean nonPublic) {
         return nonPublic ? getter
-                : getter == null || getter.IsPublic() ? getter : null;
+                : getter == null || getter.isPublic() ? getter : null;
     }
 
     /**
@@ -79,7 +79,7 @@ public class PropertyInfo extends MemberInfo {
      */
     public MethodInfo GetSetMethod(boolean nonPublic) {
         return nonPublic ? setter
-                : setter == null || setter.IsPublic() ? setter : null;
+                : setter == null || setter.isPublic() ? setter : null;
     }
 
     public String toString() {

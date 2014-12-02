@@ -366,7 +366,7 @@ abstract class ILPrinterVisitor extends Visitor {
   @throws(classOf[IOException])
   def caseMethodBuilder(method: MethodBuilder): Unit = {
     if (nomembers) return
-    print(".method "); printHeader(method, method.ReturnType)
+    print(".method "); printHeader(method, method.returnType)
     if (method.isAbstract()
       || (method.declaringType != null
         && method.declaringType.isInterface()
@@ -618,7 +618,7 @@ abstract class ILPrinterVisitor extends Visitor {
   @throws(classOf[IOException])
   def printHeader(method: MethodBase, returnType: Type): Unit = {
     print(MethodAttributes.toString(method.Attributes))
-    print(' '); print(CallingConventions.toString(method.CallingConvention))
+    print(' '); print(CallingConventions.toString(method.callingConvention))
     print(' '); printSignature(returnType)
     //print(' ') print(marshal)
     print(' '); printName(method.name)
@@ -639,15 +639,15 @@ abstract class ILPrinterVisitor extends Visitor {
   }
 
   def printSignature(method: MethodBase): Unit = {
-    var returnType: Type = null
-    if (method.isInstanceOf[MethodInfo])
-      returnType = (method.asInstanceOf[MethodInfo]).ReturnType
-    else if (method.isInstanceOf[ConstructorInfo])
-      returnType = Common.SystemVoid
-    else
-      throw new RuntimeException()
+    val returnType: Type =
+      if (method.isInstanceOf[MethodInfo])
+        (method.asInstanceOf[MethodInfo]).returnType
+      else if (method.isInstanceOf[ConstructorInfo])
+        Common.SystemVoid
+      else
+        throw new RuntimeException()
 
-    val s = CallingConventions.toString(method.CallingConvention)
+    val s = CallingConventions.toString(method.callingConvention)
     print(s)
     if (s.length() > 0) print(' ')
     printSignature(returnType)

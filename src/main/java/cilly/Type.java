@@ -632,8 +632,8 @@ public abstract class Type extends MemberInfo {
         int cnt = 0;
         for (int i = 0; i < this.constructors.length; i++) {
             ConstructorInfo constr = this.constructors[i];
-            boolean accessible = (getPublic && constr.IsPublic())
-                    || (getNonPublic && !constr.IsPublic());
+            boolean accessible = (getPublic && constr.isPublic())
+                    || (getNonPublic && !constr.isPublic());
             if (accessible
                     && ((getInstance && !constr.isStatic()) || (getStatic && constr
                             .isStatic())))
@@ -686,7 +686,7 @@ public abstract class Type extends MemberInfo {
         for (int i = 0; i < methods.length; i++)
             if (name.equals(methods[i].name)
                     && equalParameters(methods[i].getParameters(), paramTypes)
-                    && (retType == null || methods[i].ReturnType == retType))
+                    && (retType == null || methods[i].returnType == retType))
                 return methods[i];
         return null;
     }
@@ -749,12 +749,12 @@ public abstract class Type extends MemberInfo {
         int cnt = 0;
         for (int i = 0; i < methods.length; i++) {
             MethodInfo method = methods[i];
-            boolean accessible = (getPublic && method.IsPublic())
-                    || (getNonPublic && !method.IsPublic());
+            boolean accessible = (getPublic && method.isPublic())
+                    || (getNonPublic && !method.isPublic());
             if (accessible
                     // strip off the private methods up the hierarchy
                     && ((method.declaringType == this) || ((method.declaringType != this) && !method
-                            .IsPrivate()))
+                            .isPrivate()))
                     && ((getInstance && !method.isStatic()) || ((getStatic && method
                             .isStatic()) && (method.declaringType == this || (bindingFlags & BindingFlags.FlattenHierarchy) != 0))))
                 methods[cnt++] = method;
