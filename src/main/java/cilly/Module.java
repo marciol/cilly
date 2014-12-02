@@ -50,7 +50,7 @@ public abstract class Module extends CustomAttributeProvider {
     /** Returns the specified class, performing a case-sensitive search. */
     public Type getType(String name) {
         initTypes();
-        return (Type) typesMap.get(name);
+        return typesMap.get(name);
     }
 
     /**
@@ -106,7 +106,7 @@ public abstract class Module extends CustomAttributeProvider {
     // protected members
 
     // all the types defined in this module
-    protected final Map typesMap = new HashMap<String, Type>();
+    protected final Map<String, Type> typesMap = new HashMap<String, Type>();
 
     // all the types defined in this module
     protected Type[] types;
