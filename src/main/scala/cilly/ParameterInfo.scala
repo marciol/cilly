@@ -16,7 +16,7 @@ package cilly
  * @author Nikolay Mihaylov
  * @version 1.0
  */
-class ParameterInfo protected (val name: String, val parameterType: Type, val attributes: Short, val position: Int) extends CustomAttributeProvider {
+class ParameterInfo private[cilly](val name: String, val parameterType: Type, val attributes: Short, val position: Int) extends CustomAttributeProvider {
 
   protected def this(name: String, parameterType: Type, attributes: Int, position: Int) {
     this(name, parameterType, attributes.toShort, position)

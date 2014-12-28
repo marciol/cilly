@@ -19,7 +19,7 @@ import java.io.IOException
  * @author Nikolay Mihaylov
  * @version 1.0
  */
-class FieldBuilder(name: String, declType: Type, attrs: Int, fieldTypeWithMods: PECustomMod)
+class FieldBuilder(name: String, declType: Type, attrs: Short, fieldTypeWithMods: PECustomMod)
   extends FieldInfo(name, declType, attrs, fieldTypeWithMods, null)
   with ICustomAttributeSetter
   with Visitable {

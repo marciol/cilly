@@ -51,7 +51,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // newobj
     // pop size is the number of parameters
     emit(opcode, arg, OpCode.PUSH_size(opcode.CEE_push) -
-      arg.getParameters().length)
+      arg.getParameters.length)
   }
 
   /**
@@ -130,7 +130,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
 
     emit(opcode, label)
     // is the label initialized ? if true backward jump else forward jump
-    if (label.isInitialized()) {
+    if (label.isInitialized) {
       // 	    if (arg.stacksize != lastLabel.stacksize) {
       // 		System.err.println("ILGenerator.Emit: Stack depth differs depending on path:");
       // 		System.err.println("\tmethod = " + owner);
@@ -138,7 +138,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
       // 	    }
       //assert arg.stacksize == lastLabel.stacksize;
     } else {
-      label.setStacksize(lastLabel.getStacksize())
+      label.setStacksize(lastLabel.getStacksize)
     }
   }
 
@@ -176,9 +176,9 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
       opcode == OpCode.Jmp) {
       OpCode.PUSH_size(opcode.CEE_push) - OpCode.POP_size(opcode.CEE_pop)
     } else if (opcode == OpCode.Calli || opcode == OpCode.Callvirt) {
-      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length - 1
+      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters.length - 1
     } else {
-      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters().length
+      (if (arg.returnType == Common.SystemVoid) 0 else 1) - arg.getParameters.length
     }
     emit(opcode, arg, popush)
   }
@@ -227,7 +227,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     // push size is either 0 (void Method) either 1
     //System.out.println(arg.ReturnType.Size + " " + arg.GetParameters().length);
     emit(opcode, arg, (if (arg.returnType == Common.SystemVoid) 0 else 1) -
-      arg.getParameters().length)
+      arg.getParameters.length)
   }
 
   /**
@@ -237,7 +237,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
   def emitWriteLine(arg: FieldInfo): Unit = {
     // first load field info
     // if static use OpCode.Ldsfld
-    if (arg.isStatic())
+    if (arg.isStatic)
       emit(OpCode.Ldsfld, arg)
     else
       emit(OpCode.Ldfld, arg)
@@ -401,13 +401,13 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     lineNums.put(lastLabel, lineRange + ":" + colRange + "  '" + filename + "'")
   }
 
-  def getLocals(): Array[LocalBuilder] = localList.toArray
+  def getLocals: Array[LocalBuilder] = localList.toArray
 
-  def getLabelIterator() = labelList.iterator
+  def getLabelIterator = labelList.iterator
 
-  def getOpcodeIterator() = opcodeList.iterator
+  def getOpcodeIterator = opcodeList.iterator
 
-  def getArgumentIterator() = argumentList.iterator
+  def getArgumentIterator = argumentList.iterator
 
   //##########################################################################
   // private implementation details
@@ -441,7 +441,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
 
   val lineNums = scala.collection.mutable.Map.empty[Label, String]
 
-  def getMaxStacksize(): Int = { this.maxstack }
+  def getMaxStacksize: Int = { this.maxstack }
 
   // private emit with Object Argument
   private def emit(opcode: OpCode, arg: Object): Unit = {
@@ -455,7 +455,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     opcodeList += opcode
     argumentList += arg
     // compute new lastLabel (next label)
-    val stackSize: Int = lastLabel.getStacksize() + overridePOPUSH
+    val stackSize: Int = lastLabel.getStacksize + overridePOPUSH
     if (stackSize < 0) {
       val msg = "ILGenerator.emit(): Stack underflow in method: " + owner
       scala.Console.println(msg)
@@ -463,7 +463,7 @@ final class ILGenerator(val owner: MethodBase) extends Visitable {
     }
     if (stackSize > maxstack)
       maxstack = stackSize
-    var address: Int = lastLabel.getAddress() + opcode.CEE_length
+    var address: Int = lastLabel.getAddress + opcode.CEE_length
     if (opcode.CEE_opcode == OpCode.CEE_SWITCH) {
       address = address + 4 * arg.asInstanceOf[Array[Label]].length
     }

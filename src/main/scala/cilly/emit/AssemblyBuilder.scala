@@ -38,9 +38,7 @@ class AssemblyBuilder(name: AssemblyName)
   }
 
   /** Returns the dynamic module with the specified name. */
-  def getDynamicModule(name: String): ModuleBuilder = {
-    return getModule(name).asInstanceOf[ModuleBuilder]
-  }
+  def dynamicModule(name: String): ModuleBuilder = module(name).asInstanceOf[ModuleBuilder]
 
   /** Saves this dynamic assembly to disk. */
   @throws(classOf[IOException])
@@ -56,19 +54,17 @@ class AssemblyBuilder(name: AssemblyName)
   }
 
   /** Returns the list of generated files from calling Save(). */
-  def getGeneratedFiles(): Array[String] = {
+  def getGeneratedFiles: Array[String] =
     return generatedFiles.toArray // (new Array[String](generatedFiles.size())).asInstanceOf[Array[String]]
-  }
 
   /** Sets the entry point for this dynamic assembly. */
   def setEntryPoint(entryMethod: MethodInfo): Unit = {
-    EntryPoint = entryMethod
+    entryPoint = entryMethod
   }
 
   /** Sets a custom attribute. */
-  def setCustomAttribute(constr: ConstructorInfo, value: Array[Byte]): Unit = {
+  def setCustomAttribute(constr: ConstructorInfo, value: Array[Byte]): Unit =
     addCustomAttribute(constr, value)
-  }
 
   //##########################################################################
   // protected members
@@ -77,12 +73,11 @@ class AssemblyBuilder(name: AssemblyName)
   protected var externAssemblies = scala.collection.mutable.Set.empty[Assembly]
 
   // register an extern assembly
-  protected def registerExternAssembly(assembly: Assembly): Unit = {
+  protected def registerExternAssembly(assembly: Assembly): Unit =
     externAssemblies += assembly
-  }
 
   // get all extern Assemblies used in this Assembly Builder
-  def getExternAssemblies(): Array[Assembly] = {
+  def getExternAssemblies: Array[Assembly] = {
     externAssemblies = scala.collection.mutable.Set[Assembly]()
     val iter = Assembly.assemblies.values().iterator
     while (iter.hasNext) {

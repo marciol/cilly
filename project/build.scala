@@ -9,6 +9,6 @@ object CillyBuild extends Build {
         name := "cilly",
         version := "0.1",
         scalaVersion := "2.11.4",
-        scalacOptions ++= Seq("-feature", "-deprecation", "-Xlint","-Xfuture")
+        scalacOptions ++= Seq("-feature", "-deprecation", "-Xlint", "-Xfuture", "-Xcheckinit")
       )
 }

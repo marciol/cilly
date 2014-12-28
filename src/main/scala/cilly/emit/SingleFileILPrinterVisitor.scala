@@ -28,25 +28,23 @@ final class SingleFileILPrinterVisitor(_fileName: String) extends ILPrinterVisit
 
   out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)))
 
-  /**
-   * Visit an AssemblyBuilder
-   */
+  /** Visit an AssemblyBuilder */
   @throws(classOf[IOException])
   def caseAssemblyBuilder(assemblyBuilder: AssemblyBuilder): Unit = {
     ILPrinterVisitor.currAssembly = assemblyBuilder
 
     // first get the entryPoint
-    this.entryPoint = assemblyBuilder.EntryPoint
+    this.entryPoint = assemblyBuilder.entryPoint
 
     // all external assemblies
-    as = assemblyBuilder.getExternAssemblies()
+    as = assemblyBuilder.getExternAssemblies
     scala.util.Sorting.quickSort(as)(assemblyNameComparator) // Arrays.sort(as, assemblyNameComparator)
 
     assemblyBuilder.generatedFiles += fileName
     printAssemblyBoilerplate()
 
     // print each module
-    val m: Array[Module] = assemblyBuilder.getModules()
+    val m: Array[Module] = assemblyBuilder.modules
     nomembers = true
     for (i <- 0 until m.length) {
       print(m(i).asInstanceOf[ModuleBuilder])
@@ -61,9 +59,7 @@ final class SingleFileILPrinterVisitor(_fileName: String) extends ILPrinterVisit
     ILPrinterVisitor.currAssembly = null
   }
 
-  /**
-   * Visit a ModuleBuilder
-   */
+  /** Visit a ModuleBuilder */
   @throws(classOf[IOException])
   def caseModuleBuilder(module: ModuleBuilder): Unit = {
     // print module declaration
@@ -76,16 +72,16 @@ final class SingleFileILPrinterVisitor(_fileName: String) extends ILPrinterVisit
     if (!module.globalsCreated)
       module.CreateGlobalFunctions()
 
-    val m: Array[MethodInfo] = module.getMethods()
+    val m: Array[MethodInfo] = module.getMethods
     for (i <- 0 until m.length) {
       print(m(i).asInstanceOf[MethodBuilder])
     }
 
-    val t: Array[Type] = module.getTypes()
+    val t: Array[Type] = module.getTypes
     for (i <- 0 until t.length) {
       print(t(i).asInstanceOf[TypeBuilder])
     }
     currentModule = null
   }
 
-}  // class SingleFileILPrinterVisitor
+}

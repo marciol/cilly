@@ -16,7 +16,7 @@ import java.io.IOException
  * @author Nikolay Mihaylov
  * @version 1.0
  */
-class MethodBuilder(name: String, declType: Type, attrs: Int, returnType: Type, paramTypes: Array[Type])
+class MethodBuilder(name: String, declType: Type, attrs: Short, returnType: Type, paramTypes: Array[Type])
   extends MethodInfo(name, declType, attrs, returnType, paramTypes)
   with ICustomAttributeSetter
   with Visitable {
@@ -35,7 +35,7 @@ class MethodBuilder(name: String, declType: Type, attrs: Int, returnType: Type, 
   }
 
   /** Returns an ILGenerator for this method. */
-  def getILGenerator(): ILGenerator = {
+  def getILGenerator: ILGenerator = {
     if (ilGenerator == null)
       throw new RuntimeException
     ("No code generator available for this method: " + this)
@@ -61,7 +61,7 @@ class MethodBuilder(name: String, declType: Type, attrs: Int, returnType: Type, 
   // it contains the method's body
   protected final val ilGenerator: ILGenerator =
     if (declaringType == null // global method
-      || !declaringType.isInterface())
+      || !declaringType.isInterface)
       new ILGenerator(this)
     else null
 

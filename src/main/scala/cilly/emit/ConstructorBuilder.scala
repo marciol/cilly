@@ -19,7 +19,7 @@ import java.io.IOException
  * @author Nikolay Mihaylov
  * @version 1.0
  */
-class ConstructorBuilder(declType: Type, attrs: Int, paramTypes: Array[Type])
+class ConstructorBuilder(declType: Type, attrs: Short, paramTypes: Array[Type])
   extends ConstructorInfo(declType, attrs, paramTypes)
   with ICustomAttributeSetter
   with Visitable {
@@ -35,7 +35,7 @@ class ConstructorBuilder(declType: Type, attrs: Int, paramTypes: Array[Type])
   }
 
   /** Returns an ILGenerator for this constructor. */
-  def getILGenerator(): ILGenerator = {
+  def getILGenerator: ILGenerator = {
     return ilGenerator
   }
 

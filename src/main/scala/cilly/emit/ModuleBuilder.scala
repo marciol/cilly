@@ -80,7 +80,7 @@ class ModuleBuilder(name: String, fullname: String, scopeName: String, assembly:
    * Defines a global method given its name, attributes, return type, and
    * parameter types.
    */
-  def defineGlobalMethod(name: String, attributes: Int,
+  def defineGlobalMethod(name: String, attributes: Short,
     returnType: Type, paramTypes: Array[Type]): MethodBuilder =
     {
       val method =
@@ -89,11 +89,11 @@ class ModuleBuilder(name: String, fullname: String, scopeName: String, assembly:
       return method
     }
 
-  override def getTypes(): Array[Type] = {
+  override def getTypes: Array[Type] = {
     val res = scala.collection.mutable.ArrayBuffer.empty[Type]
     val iter = typesMap.values().iterator
     while (iter.hasNext) {
-      res += iter.next.asInstanceOf[Type]
+      res += iter.next
     }
     return res.toArray
   }

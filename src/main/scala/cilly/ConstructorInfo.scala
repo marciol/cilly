@@ -13,10 +13,10 @@ package cilly;
   * @author Nikolay Mihaylov
   * @version 1.0
   */
-class ConstructorInfo(name: String, declType: Type, attrs: Int, params: Array[ParameterInfo])
-    extends MethodBase(name, declType, attrs, params) {
+class ConstructorInfo(override val name: String, override val declaringType: Type, override val attributes: Short, override val params: Array[ParameterInfo])
+    extends MethodBase(name, declaringType, attributes, params) {
 
-  assert(declType != null, "Owner can't be 'null' for a constructor!")
+  assert(declaringType != null, "Owner can't be 'null' for a constructor!")
 
   final def memberType = MemberTypes.Constructor
 
@@ -24,16 +24,16 @@ class ConstructorInfo(name: String, declType: Type, attrs: Int, params: Array[Pa
 
   /** Public constructors */
 
-  def this(declType: Type, attrs: Int, paramTypes: Array[Type]) {
+  def this(declType: Type, attrs: Short, paramTypes: Array[Type]) {
     this(ConstructorInfo.getName(attrs), declType, attrs, MethodBase.convertParamTypesToParameterInfos(paramTypes))
   }
 
-  def this(declType: Type, attrs: Int, params: Array[ParameterInfo]) {
+  def this(declType: Type, attrs: Short, params: Array[ParameterInfo]) {
     this(ConstructorInfo.getName(attrs), declType, attrs, params);
   }
 
   override def toString =
-    s"${MethodAttributes.toString(Attributes)} ${Type.VOID} ${declaringType.fullName}::$name$params2String"
+    s"${MethodAttributes.toString(attributes)} ${Type.VOID} ${declaringType.fullName}::$name$params2String"
 }
 
 object ConstructorInfo {

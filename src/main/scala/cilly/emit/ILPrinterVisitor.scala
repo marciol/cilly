@@ -33,7 +33,7 @@ abstract class ILPrinterVisitor extends Visitor {
       override def compare(o1: Assembly, o2: Assembly): Int = {
         val a1 = o1.asInstanceOf[Assembly]
         val a2 = o2.asInstanceOf[Assembly]
-        return a1.getName().name.compareTo(a2.getName().name)
+        return a1.getName.name.compareTo(a2.getName.name)
       }
     }
 
@@ -201,15 +201,15 @@ abstract class ILPrinterVisitor extends Visitor {
     // <classAttr>* <id>
     // [extends <typeReference>]
     // [implements <typeReference> [, <typeReference>]*]
-    print(TypeAttributes.toString(tpe.Attributes))
+    print(TypeAttributes.toString(tpe.attributes))
     print(" \'"); print(tpe.name); print("\'")
-    printTypeParams(tpe.getSortedTVars())
-    if (tpe.BaseType() != null) {
+    printTypeParams(tpe.getSortedTVars)
+    if (tpe.BaseType != null) {
       println()
       print("       extends    ")
-      printReference(tpe.BaseType())
+      printReference(tpe.BaseType)
     }
-    val ifaces: Array[Type] = tpe.getInterfaces()
+    val ifaces: Array[Type] = tpe.getInterfaces
     if (ifaces.length > 0) {
       println()
       print("       implements ")
@@ -271,16 +271,16 @@ abstract class ILPrinterVisitor extends Visitor {
     print(FieldAttributes.toString(field.attributes))
     print(" "); printSignature(field.fieldType, field.cmods)
     print(" \'"); print(field.name); print("\'")
-    if (field.isLiteral()) {
+    if (field.isLiteral) {
       print(" = ")
-      val value = field.getValue()
+      val value = field.getValue
       if (value == null) {
         print("nullref")
       } else if (value.isInstanceOf[String]) {
         print(msilString(value.asInstanceOf[String]))
       } else if (value.isInstanceOf[Boolean]) {
         print("bool (")
-        print(if ((value.asInstanceOf[Boolean]).booleanValue()) { "true" } else { "false" })
+        print(if ((value.asInstanceOf[Boolean])) { "true" } else { "false" })
         print(")")
       } else if (value.isInstanceOf[Byte]) {
         print("int8 (")
@@ -350,7 +350,7 @@ abstract class ILPrinterVisitor extends Visitor {
     println(); println("{"); indent()
     printAttributes(constr)
     try {
-      print(constr.getILGenerator())
+      print(constr.getILGenerator)
     } catch {
       case e: RuntimeException => {
         System.err.println("In method " + constr)
@@ -367,10 +367,10 @@ abstract class ILPrinterVisitor extends Visitor {
   def caseMethodBuilder(method: MethodBuilder): Unit = {
     if (nomembers) return
     print(".method "); printHeader(method, method.returnType)
-    if (method.isAbstract()
+    if (method.isAbstract
       || (method.declaringType != null
-        && method.declaringType.isInterface()
-        && !method.isStatic())) {
+        && method.declaringType.isInterface
+        && !method.isStatic)) {
       println(" {"); indent()
       printAttributes(method)
       undent(); println("}")
@@ -380,7 +380,7 @@ abstract class ILPrinterVisitor extends Visitor {
       if (method == entryPoint)
         println(".entrypoint")
       try {
-        print(method.getILGenerator())
+        print(method.getILGenerator)
       } catch {
         case e: RuntimeException =>
           System.err.println("In method " + method)
@@ -408,9 +408,9 @@ abstract class ILPrinterVisitor extends Visitor {
   @throws(classOf[IOException])
   def caseILGenerator(code: ILGenerator): Unit = {
     // print maxstack
-    println(".maxstack   " + code.getMaxStacksize())
+    println(".maxstack   " + code.getMaxStacksize)
     // get the local variables
-    locals = code.getLocals()
+    locals = code.getLocals
     if (locals.length > 0) {
       println(".locals init (")
       indent()
@@ -422,9 +422,9 @@ abstract class ILPrinterVisitor extends Visitor {
       println(")")
     }
     // get 3 iterators for the 3 lists
-    val itL = code.getLabelIterator()
-    val itO = code.getOpcodeIterator()
-    val itA = code.getArgumentIterator()
+    val itL = code.getLabelIterator
+    val itO = code.getOpcodeIterator
+    val itA = code.getArgumentIterator
     // iterate over each opcode
     while (itO.hasNext) {
       // first print label
@@ -433,7 +433,7 @@ abstract class ILPrinterVisitor extends Visitor {
       if (oOpt.isDefined) {
         println(".line       " + oOpt.get)
       }
-      argument = itA.next.asInstanceOf[Object]
+      argument = itA.next
       printLabel(label)
       val o2 = itO.next
       if (o2 != null) {
@@ -522,7 +522,7 @@ abstract class ILPrinterVisitor extends Visitor {
    * Visit a Label
    */
   def printLabel(label: Label): Unit = {
-    val kind = label.getKind()
+    val kind = label.getKind
     if (kind == Label.Kind.Normal) {
       print(label + ": ")
     } else if (kind == Label.Kind.NewScope) {
@@ -578,7 +578,7 @@ abstract class ILPrinterVisitor extends Visitor {
     print(".assembly ")
     if (extern)
       print("extern ")
-    val an = assem.getName()
+    val an = assem.getName
     printName(an.name); println()
     println("{")
     if (!extern)
@@ -617,16 +617,16 @@ abstract class ILPrinterVisitor extends Visitor {
   // print method head
   @throws(classOf[IOException])
   def printHeader(method: MethodBase, returnType: Type): Unit = {
-    print(MethodAttributes.toString(method.Attributes))
+    print(MethodAttributes.toString(method.attributes))
     print(' '); print(CallingConventions.toString(method.callingConvention))
     print(' '); printSignature(returnType)
     //print(' ') print(marshal)
     print(' '); printName(method.name)
     if (method.isInstanceOf[MethodInfo]) {
       val mthdInfo = method.asInstanceOf[MethodInfo]
-      printTypeParams(mthdInfo.getSortedMVars())
+      printTypeParams(mthdInfo.getSortedMVars)
     }
-    val params = method.getParameters()
+    val params = method.getParameters
     print('(')
     for (i <- 0 until params.length) {
       if (i > 0) print(", ")
@@ -635,7 +635,7 @@ abstract class ILPrinterVisitor extends Visitor {
     print(") ")
 
     print(MethodImplAttributes
-      .toString(method.getMethodImplementationFlags()))
+      .toString(method.getMethodImplementationFlags))
   }
 
   def printSignature(method: MethodBase): Unit = {
@@ -655,7 +655,7 @@ abstract class ILPrinterVisitor extends Visitor {
     print(' '); printReference(method.declaringType)
     print("::"); printName(method.name)
 
-    val params = method.getParameters()
+    val params = method.getParameters
     print("(")
     for (i <- 0 until params.length) {
       if (i > 0) print(", ")
@@ -682,17 +682,17 @@ abstract class ILPrinterVisitor extends Visitor {
       print(sigOpt.get)
       return
     }
-    if (tpe.hasElementType()) {
-      printSignature(tpe.getElementType())
-      if (tpe.isArray())
+    if (tpe.hasElementType) {
+      printSignature(tpe.getElementType)
+      if (tpe.isArray)
         print("[]")
-      else if (tpe.isPointer())
+      else if (tpe.isPointer)
         print('*')
-      else if (tpe.isByRef())
+      else if (tpe.isByRef)
         print('&')
     } else {
       val preref = if (tpe.isInstanceOf[Type.TMVarUsage]) ""
-      else if (tpe.isValueType()) "valuetype "
+      else if (tpe.isValueType) "valuetype "
       else "class "
       print(preref)
       printReference(tpe)
@@ -700,11 +700,11 @@ abstract class ILPrinterVisitor extends Visitor {
   }
 
   def printReference(tpe: Type): Unit = {
-    if (tpe.Module != null) { // i.e. not PrimitiveType and not TMVarUsage
-      if (tpe.assembly() != currentModule.assembly) {
-        print('['); print(tpe.assembly().getName().name); print("]")
-      } else if (tpe.Module != currentModule) {
-        print("[.module "); print(tpe.Module.name); print("]")
+    if (tpe.module != null) { // i.e. not PrimitiveType and not TMVarUsage
+      if (tpe.assembly != currentModule.assembly) {
+        print('['); print(tpe.assembly.getName.name); print("]")
+      } else if (tpe.module != currentModule) {
+        print("[.module "); print(tpe.module.name); print("]")
       }
     }
     printTypeName(tpe)
@@ -741,9 +741,9 @@ abstract class ILPrinterVisitor extends Visitor {
     val attrs = icap.getCustomAttributes(false)
     for (i <- 0 until attrs.length) {
       print(".custom ")
-      printSignature((attrs(i).asInstanceOf[Attribute]).getConstructor())
+      printSignature((attrs(i).asInstanceOf[Attribute]).getConstructor)
       print(" = (")
-      print(PEFile.bytes2hex((attrs(i).asInstanceOf[Attribute]).getValue()))
+      print(PEFile.bytes2hex((attrs(i).asInstanceOf[Attribute]).getValue))
       println(")")
     }
   }

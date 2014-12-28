@@ -32,14 +32,14 @@ final class MultipleFilesILPrinterVisitor(destPath: String, sourceFilesPath: Str
     ILPrinterVisitor.currAssembly = assemblyBuilder
 
     // first get the entryPoint
-    this.entryPoint = assemblyBuilder.EntryPoint
+    this.entryPoint = assemblyBuilder.entryPoint
 
     // all external assemblies
-    as = assemblyBuilder.getExternAssemblies()
+    as = assemblyBuilder.getExternAssemblies
     scala.util.Sorting.quickSort(as)(assemblyNameComparator) // Arrays.sort(as, assemblyNameComparator)
 
     // print each module
-    val m: Array[Module] = assemblyBuilder.getModules()
+    val m: Array[Module] = assemblyBuilder.modules
     nomembers = true
     for (i <- 0 until m.length) {
       print(m(i).asInstanceOf[ModuleBuilder])
@@ -66,10 +66,10 @@ final class MultipleFilesILPrinterVisitor(destPath: String, sourceFilesPath: Str
     if (!module.globalsCreated)
       module.CreateGlobalFunctions()
 
-    val m: Array[MethodInfo] = module.getMethods()
+    val m: Array[MethodInfo] = module.getMethods
 
     // "Types" contain all the classes
-    val t: Array[Type] = module.getTypes()
+    val t: Array[Type] = module.getTypes
     for (i <- 0 until t.length) {
       val tBuilder = t(i).asInstanceOf[TypeBuilder]
       val sourceFilename = tBuilder.sourceFilename
@@ -106,7 +106,7 @@ final class MultipleFilesILPrinterVisitor(destPath: String, sourceFilesPath: Str
 
     // now write the global methods (typically contains the "main" method)
     if (!nomembers) {
-      val globalMethods: File = new File(destPath, ILPrinterVisitor.currAssembly.getName().name + ".msil")
+      val globalMethods: File = new File(destPath, ILPrinterVisitor.currAssembly.getName.name + ".msil")
       val append = assemblyBuilder.generatedFiles.contains(globalMethods.getPath)
 
       out = new PrintWriter(new BufferedWriter(new FileWriter(globalMethods, append)))

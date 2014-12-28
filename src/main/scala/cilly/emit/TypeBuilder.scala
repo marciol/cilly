@@ -34,7 +34,7 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
 
     raw = false
     if (declaringType == null)
-      Module.asInstanceOf[ModuleBuilder].addType(this)
+      module.asInstanceOf[ModuleBuilder].addType(this)
     return this
   }
 
@@ -65,7 +65,7 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
     while (methods.hasNext) {
       val m = methods.next().asInstanceOf[MethodInfo]
       if (methodsEqual(m, method)) {
-        throw new RuntimeException(s"[${assembly()}] Method has already been defined: $m")
+        throw new RuntimeException(s"[$assembly] Method has already been defined: $m")
       }
     }
     methodBuilders += method
@@ -82,7 +82,7 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
     while (iter.hasNext) {
       val c = iter.next().asInstanceOf[ConstructorInfo]
       if (constructorsEqual(c, constr)) {
-        throw new RuntimeException(s"[${assembly()}] Constructor has already been defined: $c")
+        throw new RuntimeException(s"[$assembly] Constructor has already been defined: $c")
       }
     }
     constructorBuilders += constr
@@ -101,7 +101,7 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
         throw new RuntimeException(message)
       }
     }
-    val t = new TypeBuilder(Module, attributes, name, baseType, interfaces, this)
+    val t = new TypeBuilder(module, attributes, name, baseType, interfaces, this)
     nestedTypeBuilders += t
     return t
   }
@@ -113,9 +113,9 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
   }
 
   /** Get all fields of the current Type. */
-  override def getFields(): Array[FieldInfo] = {
+  override def getFieldsArray: Array[FieldInfo] = {
     testRaw("<getFields>")
-    return super.getFields()
+    return super.getFieldsArray
   }
 
   /**
@@ -130,9 +130,9 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
   /**
    * Returns all the public constructors defined for the current Type.
    */
-  override def getConstructors(): Array[ConstructorInfo] = {
+  override def getConstructorsArray: Array[ConstructorInfo] = {
     testRaw("<getConstructors>")
-    return super.getConstructors()
+    return super.getConstructorsArray
   }
 
   /**
@@ -145,9 +145,9 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
   }
 
   /** Returns all the public methods of the current Type. */
-  override def getMethods(): Array[MethodInfo] = {
+  override def getMethodsArray: Array[MethodInfo] = {
     testRaw("<getMethods>")
-    return super.getMethods()
+    return super.getMethodsArray
   }
 
   /** Searches for the nested type with the specified name. */
@@ -157,15 +157,13 @@ class TypeBuilder(module: Module, attributes: Int, fullName: String, baseType: T
   }
 
   /** Returns all the types nested within the current Type. */
-  override def getNestedTypes(): Array[Type] = {
+  override def getNestedTypes: Array[Type] = {
     testRaw("<getNestedTypes>")
-    super.getNestedTypes()
+    super.getNestedTypes
   }
 
   /** Returns a Type object that represents a one-dimensional array of the current type */
-  def makeArrayType(): Type = {
-    Type.mkArray(this, 1)
-  }
+  def makeArrayType: Type = Type.mkArray(this, 1)
 
   /** Sets a custom attribute. */
   def setCustomAttribute(constr: ConstructorInfo, value: Array[Byte]): Unit = {
@@ -232,8 +230,8 @@ object TypeBuilder {
       return false
     if (m1.returnType != m2.returnType)
       return false
-    val p1 = m1.getParameters()
-    val p2 = m2.getParameters()
+    val p1 = m1.getParameters
+    val p2 = m2.getParameters
     if (p1.length != p2.length)
       return false
     for (i <- 0 until p1.length)
@@ -245,8 +243,8 @@ object TypeBuilder {
   def constructorsEqual(c1: ConstructorInfo, c2: ConstructorInfo): Boolean = {
     if (c1.isStatic != c2.isStatic)
       return false
-    val p1 = c1.getParameters()
-    val p2 = c2.getParameters()
+    val p1 = c1.getParameters
+    val p2 = c2.getParameters
     if (p1.length != p2.length)
       return false
     for (i <- 0 until p1.length)

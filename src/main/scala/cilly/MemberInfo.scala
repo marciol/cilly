@@ -25,7 +25,3 @@ abstract class MemberInfo(val name: String, val declaringType: Type) extends Cus
    */
   def memberType: Int
 }
-
-object MemberInfo {
-  final val EMPTY_ARRAY: Array[MemberInfo] = new Array[MemberInfo](0)
-}
